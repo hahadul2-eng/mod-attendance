@@ -1756,37 +1756,6 @@ function refreshIfActive() {
 // Sample seed data (최초 1회만 실행)
 async function seedData() {
   if (getData('seeded', false)) return;
-  const now = new Date();
-  const yr = now.getFullYear(), mo = now.getMonth() + 1;
-  const pad = n => String(n).padStart(2,'0');
-
-  const att = {};
-  ['land001','land002','land003','land004','land005','land006','mod001','mod002'].forEach(uid => {
-    att[uid] = att[uid] || {};
-    for (let d = 1; d <= now.getDate(); d++) {
-      const dateStr = `${yr}-${pad(mo)}-${pad(d)}`;
-      const dow = new Date(yr, mo-1, d).getDay();
-      if (dow === 0 || dow === 6) continue;
-      const inH = 8 + Math.floor(Math.random()*2);
-      const inM = Math.floor(Math.random()*30);
-      const outH = 17 + Math.floor(Math.random()*2);
-      const outM = Math.floor(Math.random()*30);
-      att[uid][dateStr] = {
-        checkIn:  `${pad(inH)}:${pad(inM)}`,
-        checkOut: d < now.getDate() ? `${pad(outH)}:${pad(outM)}` : null,
-        type: 'office'
-      };
-    }
-  });
-  setData('attendance', att);
-
-  const reqs = [
-    { id:'r1', uid:'land002', type:'vacation', vacType:'annual', start:'2026-03-10', end:'2026-03-11', reason:'개인 사정', status:'pending', created:'2026-02-20' },
-    { id:'r2', uid:'land003', type:'vacation', vacType:'half_am', start:'2026-02-28', end:'2026-02-28', reason:'병원 방문', status:'approved', created:'2026-02-18' },
-    { id:'r3', uid:'land005', type:'trip', date:'2026-02-25', dest:'포천시청', client:'포천시', purpose:'사업 협의', transport:'company_car', status:'approved', created:'2026-02-24' },
-    { id:'r4', uid:'land006', type:'trip', date:'2026-03-05', dest:'동두천시 현장', client:'동두천시', purpose:'현장 조사', transport:'personal_car', status:'pending', created:'2026-02-26' },
-  ];
-  setData('requests', reqs);
   setData('seeded', true);
 }
 
