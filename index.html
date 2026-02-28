@@ -370,7 +370,7 @@
   .dock-icon-btn:active { transform: scale(0.9); background: var(--green-100); }
 
   /* 출근/퇴근 원형 버튼 (독 바 오른쪽) */
-  .dock-checkin-btn {
+  .dock-bell-btn {
     width: 52px; height: 52px;
     border: none; cursor: pointer;
     border-radius: 50%;
@@ -382,13 +382,27 @@
     flex-shrink: 0;
     margin-left: 8px;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
   }
-  .dock-checkin-btn svg { width: 22px; height: 22px; }
-  .dock-checkin-btn:active { transform: scale(0.93); box-shadow: 0 2px 8px rgba(10,30,79,0.2); }
-  .dock-checkin-btn.checked-out {
-    background: linear-gradient(135deg, var(--green-500), var(--green-400));
+  .dock-bell-btn svg { width: 22px; height: 22px; }
+  .dock-bell-btn:active { transform: scale(0.93); box-shadow: 0 2px 8px rgba(10,30,79,0.2); }
+  .dock-bell-badge {
+    position: absolute;
+    top: 4px; right: 4px;
+    background: #e74c3c;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    line-height: 1;
+    border: 1.5px solid var(--green-700);
   }
-  .dock-checkin-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 
   /* ─── LOGIN ─── */
   #login-screen {
@@ -1259,13 +1273,13 @@
             </button>
           </div>
 
-          <!-- 오른쪽: 출근/퇴근 원형 버튼 -->
-          <button class="dock-checkin-btn" id="dock-btn-ci" onclick="doCheckIn()">
+          <!-- 오른쪽: 알림 버튼 -->
+          <button class="dock-bell-btn" id="dock-bell-btn" onclick="onDockBellClick()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-              <polyline points="10 17 15 12 10 7"/>
-              <line x1="15" y1="12" x2="3" y2="12"/>
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
             </svg>
+            <span class="dock-bell-badge" id="dock-bell-badge"></span>
           </button>
 
         </div><!-- /home-dock -->
@@ -1750,6 +1764,7 @@ function refreshIfActive() {
     else if (currentTab === 'vacation') renderVacation();
     updateApproveBadge();
     updateAdminApproveBadge();
+    updateDockBellBadge();
   } catch(e) {}
 }
 
@@ -1948,42 +1963,16 @@ function updateCheckInUI() {
   const today = todayStr();
   const rec = att[currentUser.id]?.[today];
 
-  // ── 독 바 출근 버튼 ──
-  const dockBtn = document.getElementById('dock-btn-ci');
   // ── 상태 배지 ──
   const badge = document.getElementById('qc-status-badge');
   // ── 기록 행 ──
   const recRow = document.getElementById('qc-record-row');
 
-  const checkinSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
-  const checkoutSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`;
-  const doneSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-
   if (rec?.checkIn && !rec?.checkOut) {
-    // 출근 중 → 퇴근 버튼
-    if (dockBtn) {
-      dockBtn.innerHTML = checkoutSVG;
-      dockBtn.onclick = doCheckOut;
-      dockBtn.disabled = false;
-      dockBtn.classList.add('checked-out');
-    }
     if (badge) { badge.textContent = '근무 중'; badge.className = 'qc-status-badge checked-in'; }
   } else if (rec?.checkOut) {
-    // 퇴근 완료
-    if (dockBtn) {
-      dockBtn.innerHTML = doneSVG;
-      dockBtn.disabled = true;
-      dockBtn.classList.remove('checked-out');
-    }
     if (badge) { badge.textContent = '퇴근 완료'; badge.className = 'qc-status-badge checked-in'; }
   } else {
-    // 미출근 → 출근 버튼
-    if (dockBtn) {
-      dockBtn.innerHTML = checkinSVG;
-      dockBtn.onclick = doCheckIn;
-      dockBtn.disabled = false;
-      dockBtn.classList.remove('checked-out');
-    }
     if (badge) { badge.textContent = '미출근'; badge.className = 'qc-status-badge'; }
   }
 
@@ -2005,6 +1994,31 @@ function calcDuration(start, end) {
   const [eh,em] = end.split(':').map(Number);
   const mins = (eh*60+em) - (sh*60+sm);
   return `${Math.floor(mins/60)}시간 ${mins%60}분`;
+}
+
+// ── 독 바 알림 버튼 ──
+function updateDockBellBadge() {
+  const badge = document.getElementById('dock-bell-badge');
+  if (!badge || !currentUser) return;
+  const pending = getData('requests', []).filter(r => r.status === 'pending' && canApprove(currentUser, r.uid)).length;
+  if (pending > 0) {
+    badge.textContent = pending > 9 ? '9+' : pending;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function onDockBellClick() {
+  if (!currentUser) return;
+  if (isAdmin(currentUser)) {
+    switchTab('admin');
+    setTimeout(() => switchAdminTab('approve', document.getElementById('admtab-approve')), 50);
+  } else if (isLeader(currentUser)) {
+    switchTab('approve');
+  } else {
+    switchTab('vacation');
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -3080,6 +3094,7 @@ function initMainApp() {
   const approveNav = document.getElementById('nav-approve');
   approveNav.style.display = (isLeader(currentUser) || isAdmin(currentUser)) ? 'flex' : 'none';
   startClock();
+  updateDockBellBadge();
   // 홈 탭: 시작 시 topbar/nav 즉시 숨김
   const topbarEl = document.querySelector('.topbar');
   const navEl = document.querySelector('.bottom-nav');
