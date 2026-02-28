@@ -1136,20 +1136,7 @@
         <input type="password" id="login-pw" placeholder="비밀번호 입력" autocomplete="current-password">
       </div>
       <div class="error-msg" id="login-error"></div>
-      <button class="btn-primary" onclick="doLogin()">로그인</button>
-      <div class="login-demo">
-        <p>💡 테스트 계정 (클릭하면 자동입력)</p>
-        <div class="demo-accounts">
-          <div class="demo-acc" onclick="fillDemo('mod000','1234')">👑 CEO: mod000 / 1234</div>
-          <div class="demo-acc" onclick="fillDemo('mod003','1234')">📋 관리부: mod003 / 1234</div>
-          <div class="demo-acc" onclick="fillDemo('land001','1234')">🏅 A팀장: land001 / 1234</div>
-          <div class="demo-acc" onclick="fillDemo('land004','1234')">🏅 B팀장: land004 / 1234</div>
-          <div class="demo-acc" onclick="fillDemo('land002','1234')">👩‍💻 A팀원: land002 / 1234</div>
-          <div class="demo-acc" onclick="fillDemo('kim','1234')">👤 김철수 (A팀): kim / 1234</div>
-          <div class="demo-acc" onclick="fillDemo('lee','1234')">👤 이영희 (B팀): lee / 1234</div>
-          <div class="demo-acc" onclick="fillDemo('park','1234')">👤 박민준 (A팀): park / 1234</div>
-        </div>
-      </div>
+      <button class="btn-primary login-btn" onclick="doLogin()">로그인</button>
     </div>
   </div>
 
@@ -1411,12 +1398,14 @@
           <button class="admin-tab"        id="admtab-approve" onclick="switchAdminTab('approve',this)">
             승인대기<span class="nav-badge" id="admin-approve-badge" style="display:none;position:static;margin-left:4px;transform:none;font-size:9px;padding:0 4px;height:14px;border-radius:7px">0</span>
           </button>
+          <button class="admin-tab"        id="admtab-accounts" onclick="switchAdminTab('accounts',this)">계정관리</button>
         </div>
         <div class="admin-content">
           <div id="admin-att"></div>
           <div id="admin-absent" style="display:none"></div>
           <div id="admin-emp" style="display:none"></div>
           <div id="admin-approve-panel" style="display:none"></div>
+          <div id="admin-accounts" style="display:none"></div>
         </div>
       </div>
 
@@ -1648,7 +1637,7 @@
 
 const USERS = {
   // ── CEO ──
-  mod000: { id:'mod000', name:'김둘이', dept:'CEO',  role:'admin',    avatar:'👑', pw:'1234' },
+  mod000: { id:'mod000', name:'김둘이', dept:'CEO',  role:'admin',    avatar:'👑', pw:'1111', loginId:'mod' },
 
   // ── 대표 (일반 직원 권한) ──
   mod001: { id:'mod001', name:'조유진', dept:'대표1', role:'employee', avatar:'🧑‍💼', pw:'1234' },
@@ -1745,6 +1734,10 @@ async function loadAllData() {
     const v = snap.val();
     if (v !== null) { dbCache.annual_overrides = v; refreshIfActive(); }
   });
+  db.ref('mod_v2/accounts').on('value', snap => {
+    const v = snap.val();
+    if (v !== null) { dbCache.accounts = v; }
+  });
 }
 
 function refreshIfActive() {
@@ -1802,26 +1795,50 @@ async function seedData() {
 // ──────────────────────────────────────────────
 let currentUser = null;
 
-function fillDemo(id, pw) {
-  document.getElementById('login-id').value = id;
-  document.getElementById('login-pw').value = pw;
-}
+
 
 async function doLogin() {
   const id = document.getElementById('login-id').value.trim();
   const pw = document.getElementById('login-pw').value;
-  const user = USERS[id];
-  if (!user || user.pw !== pw) {
-    document.getElementById('login-error').textContent = '아이디 또는 비밀번호가 올바르지 않습니다';
-    return;
-  }
-  document.getElementById('login-error').textContent = '';
+
   // 로딩 표시
   const loginBtn = document.querySelector('.login-btn');
   if (loginBtn) { loginBtn.textContent = '연결 중...'; loginBtn.disabled = true; }
+
   try {
     await loadAllData();
-    currentUser = user;
+
+    // accounts 오버라이드 확인: loginId로 매칭
+    const accounts = getData('accounts', {});
+    let matchedUser = null;
+
+    for (const [uid, acc] of Object.entries(accounts)) {
+      const loginId = acc.loginId || uid;
+      const loginPw = acc.pw || USERS[uid]?.pw;
+      if (loginId === id && loginPw === pw) {
+        matchedUser = USERS[uid];
+        break;
+      }
+    }
+
+    // accounts에 없으면 기본 USERS에서 확인 (loginId 필드 포함)
+    if (!matchedUser) {
+      const user = Object.values(USERS).find(u => {
+        const acc = accounts[u.id];
+        const loginId = acc?.loginId || u.loginId || u.id;
+        const loginPw = acc?.pw || u.pw;
+        return loginId === id && loginPw === pw;
+      });
+      if (user) matchedUser = user;
+    }
+
+    if (!matchedUser) {
+      document.getElementById('login-error').textContent = '아이디 또는 비밀번호가 올바르지 않습니다';
+      return;
+    }
+
+    document.getElementById('login-error').textContent = '';
+    currentUser = matchedUser;
     await seedData();
     initMainApp();
   } catch(e) {
@@ -2271,18 +2288,19 @@ function changeAdminMonth(delta) {
 function switchAdminTab(tab, el) {
   document.querySelectorAll('#tab-admin .admin-tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
-  ['att','absent','emp','approve-panel'].forEach(t => {
+  ['att','absent','emp','approve-panel','accounts'].forEach(t => {
     const p = document.getElementById('admin-' + t);
     if (p) p.style.display = (tab === t || (tab === 'approve' && t === 'approve-panel')) ? 'block' : 'none';
   });
-  if (tab === 'att')     renderAdminAtt();
-  if (tab === 'absent')  renderAdminAbsent();
-  if (tab === 'emp')     renderAdminEmp();
-  if (tab === 'approve') renderAdminApprovePanel();
+  if (tab === 'att')      renderAdminAtt();
+  if (tab === 'absent')   renderAdminAbsent();
+  if (tab === 'emp')      renderAdminEmp();
+  if (tab === 'approve')  renderAdminApprovePanel();
+  if (tab === 'accounts') renderAdminAccounts();
 }
 
 function renderAdmin() {
-  ['att','absent','emp','approve-panel'].forEach(t => {
+  ['att','absent','emp','approve-panel','accounts'].forEach(t => {
     const p = document.getElementById('admin-' + t);
     if (p) p.style.display = 'none';
   });
@@ -2547,6 +2565,73 @@ function saveAnnual(uid, val) {
   overrides[uid] = parseInt(val) || 0;
   setData('annual_overrides', overrides);
   showToast(`${USERS[uid]?.name || uid}님 연차 ${overrides[uid]}일로 저장됐습니다`, 'success');
+}
+
+// ── 계정관리 (아이디 / 비밀번호 변경) ──
+function renderAdminAccounts() {
+  const panel = document.getElementById('admin-accounts');
+  if (!panel) return;
+  const accounts = getData('accounts', {});
+
+  const rows = Object.values(USERS).map(u => {
+    const acc = accounts[u.id] || {};
+    const currentId = acc.loginId || u.id;
+    const currentPw = acc.pw || u.pw;
+    return `
+    <div style="background:var(--green-50);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:20px">${u.avatar}</span>
+        <div>
+          <div style="font-size:14px;font-weight:500;color:var(--green-900)">${u.name}</div>
+          <div style="font-size:11px;color:var(--text-light)">${u.dept} · ${getRoleLabel(u)}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">아이디</div>
+          <input id="acc-id-${u.id}" type="text" value="${currentId}"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--green-200);background:var(--surface);color:var(--green-900);font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">비밀번호</div>
+          <input id="acc-pw-${u.id}" type="text" value="${currentPw}"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--green-200);background:var(--surface);color:var(--green-900);font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <button onclick="saveAccount('${u.id}')"
+        style="margin-top:10px;width:100%;padding:8px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-size:13px;cursor:pointer;">
+        저장
+      </button>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div style="padding:12px 16px 8px;">
+      <span style="font-size:13px;font-weight:300;color:var(--green-800)">계정관리</span>
+      <div style="font-size:10px;color:var(--text-light);margin-top:2px;">아이디·비밀번호 변경 후 저장 버튼을 누르세요</div>
+    </div>
+    <div style="padding:0 16px 20px;">${rows}</div>`;
+}
+
+function saveAccount(uid) {
+  const idInput = document.getElementById('acc-id-' + uid);
+  const pwInput = document.getElementById('acc-pw-' + uid);
+  if (!idInput || !pwInput) return;
+  const newId = idInput.value.trim();
+  const newPw = pwInput.value.trim();
+  if (!newId || !newPw) { showToast('아이디와 비밀번호를 모두 입력하세요', 'error'); return; }
+
+  // 중복 아이디 체크 (자기 자신 제외)
+  const accounts = getData('accounts', {});
+  const allIds = Object.entries(accounts).map(([k, v]) => ({ uid: k, loginId: v.loginId || k }));
+  const dup = allIds.find(a => a.loginId === newId && a.uid !== uid);
+  // USERS 기본 아이디와도 중복 체크
+  const dupUser = Object.values(USERS).find(u => (accounts[u.id]?.loginId || u.id) === newId && u.id !== uid);
+  if (dup || dupUser) { showToast('이미 사용 중인 아이디입니다', 'error'); return; }
+
+  accounts[uid] = { loginId: newId, pw: newPw };
+  setData('accounts', accounts);
+  showToast(`${USERS[uid]?.name || uid}님 계정이 저장됐습니다`, 'success');
 }
 
 // ── 관리자용 승인 패널 ──
