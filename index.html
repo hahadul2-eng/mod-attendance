@@ -1752,9 +1752,10 @@ async function loadAllData() {
   db.ref('mod_v2/qr_codes').on('value', snap => {
     const v = snap.val();
     if (v !== null) {
-      // 안양 고정값과 다르면 강제 업데이트
-      if (v.anyang !== 'MOD_ANYANG_CHECKIN') {
-        db.ref('mod_v2/qr_codes/anyang').set('MOD_ANYANG_CHECKIN');
+      // 고정값과 다르면 강제 업데이트
+      if (v.anyang !== 'MOD_ANYANG_CHECKIN' || v.pocheon !== 'MOD_POCHEON_CHECKIN') {
+        if (v.anyang !== 'MOD_ANYANG_CHECKIN') db.ref('mod_v2/qr_codes/anyang').set('MOD_ANYANG_CHECKIN');
+        if (v.pocheon !== 'MOD_POCHEON_CHECKIN') db.ref('mod_v2/qr_codes/pocheon').set('MOD_POCHEON_CHECKIN');
         return;
       }
       dbCache.qr_codes = v;
@@ -2867,9 +2868,11 @@ function closeAppGrid() {
 const qrImageCache = {};
 // 페이지 로드 즉시 내장 QR 이미지를 캐시에 저장 (CDN 라이브러리 불필요)
 document.addEventListener('DOMContentLoaded', () => {
-  const el = document.getElementById('qrm-canvas-2');
-  const img = el && el.querySelector('img');
-  if (img && img.src.startsWith('data:')) qrImageCache['qr_img_MOD_ANYANG_CHECKIN'] = img.src;
+  [['qrm-canvas-2','MOD_ANYANG_CHECKIN'],['qrm-canvas-1','MOD_POCHEON_CHECKIN']].forEach(([id, code]) => {
+    const el = document.getElementById(id);
+    const img = el && el.querySelector('img');
+    if (img && img.src.startsWith('data:')) qrImageCache['qr_img_' + code] = img.src;
+  });
 });
 
 function drawQrCanvas(canvasId, labelId, code, timeStr) {
@@ -2932,8 +2935,8 @@ function autoGenerateQRIfNeeded() {
     qrCodes.anyang_time = timeStr;
     changed = true;
   }
-  if (!qrCodes.pocheon) {
-    qrCodes.pocheon = 'MOD_POCHEON_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8).toUpperCase();
+  if (!qrCodes.pocheon || qrCodes.pocheon !== 'MOD_POCHEON_CHECKIN') {
+    qrCodes.pocheon = 'MOD_POCHEON_CHECKIN';
     qrCodes.pocheon_time = timeStr;
     changed = true;
   }
@@ -2979,9 +2982,7 @@ function renderQrManage() {
 let qrDrawing = false; // Firebase 리스너 경쟁 조건 방지 플래그
 
 function generateNewQR(office) {
-  const newCode = office === 'anyang'
-    ? 'MOD_ANYANG_CHECKIN'
-    : 'MOD_POCHEON_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8).toUpperCase();
+  const newCode = office === 'anyang' ? 'MOD_ANYANG_CHECKIN' : 'MOD_POCHEON_CHECKIN';
   const now = new Date();
   const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   const qrCodes = getData('qr_codes', {});
