@@ -865,7 +865,8 @@
     border-bottom: 1px solid var(--warm-gray); cursor: pointer;
   }
   .profile-item:last-child { border-bottom: none; }
-  .profile-item-icon { font-size: 20px; width: 36px; text-align: center; }
+  .profile-item-icon { width: 36px; height: 36px; display:flex; align-items:center; justify-content:center; background: var(--green-50); border-radius: 10px; flex-shrink:0; }
+  .profile-item-icon svg { width: 18px; height: 18px; stroke: var(--green-700); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .profile-item-text { flex: 1; font-size: 15px; font-weight: 300; }
   .profile-item-arrow { color: var(--text-light); }
 
@@ -1413,6 +1414,7 @@
             승인대기<span class="nav-badge" id="admin-approve-badge" style="display:none;position:static;margin-left:4px;transform:none;font-size:9px;padding:0 4px;height:14px;border-radius:7px">0</span>
           </button>
           <button class="admin-tab"        id="admtab-accounts" onclick="switchAdminTab('accounts',this)">계정관리</button>
+          <button class="admin-tab"        id="admtab-reset" onclick="switchAdminTab('reset',this)">초기화</button>
         </div>
         <div class="admin-content">
           <div id="admin-att"></div>
@@ -1420,6 +1422,7 @@
           <div id="admin-emp" style="display:none"></div>
           <div id="admin-approve-panel" style="display:none"></div>
           <div id="admin-accounts" style="display:none"></div>
+          <div id="admin-reset" style="display:none"></div>
         </div>
       </div>
 
@@ -1445,27 +1448,37 @@
         </div>
         <div class="profile-list" style="margin-top:-20px;">
           <div class="profile-item" onclick="switchTab('history')">
-            <span class="profile-item-icon">🗓</span>
+            <span class="profile-item-icon">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </span>
             <span class="profile-item-text">내 근태 내역</span>
             <span class="profile-item-arrow">›</span>
           </div>
           <div class="profile-item" onclick="switchTab('vacation')">
-            <span class="profile-item-icon"></span>
+            <span class="profile-item-icon">
+              <svg viewBox="0 0 24 24"><path d="M17.5 8a5.5 5.5 0 0 1-11 0"/><path d="M3 8h18"/><path d="M4 8c0 8 4 12 8 12s8-4 8-12"/></svg>
+            </span>
             <span class="profile-item-text">휴가 / 출장 내역</span>
             <span class="profile-item-arrow">›</span>
           </div>
-          <div class="profile-item" onclick="showToast('비밀번호 변경 기능은 준비 중입니다')">
-            <span class="profile-item-icon">🔐</span>
+          <div class="profile-item" onclick="showToast('비밀번호 변경은 관리부에게 문의하세요')">
+            <span class="profile-item-icon">
+              <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            </span>
             <span class="profile-item-text">비밀번호 변경</span>
             <span class="profile-item-arrow">›</span>
           </div>
           <div class="profile-item" onclick="showToast('앱 버전: v1.0.0 (2026년 2월)')">
-            <span class="profile-item-icon">ℹ️</span>
+            <span class="profile-item-icon">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </span>
             <span class="profile-item-text">앱 정보</span>
             <span class="profile-item-arrow">›</span>
           </div>
           <div class="profile-item" onclick="doLogout()" style="color:var(--green-800);">
-            <span class="profile-item-icon">🚪</span>
+            <span class="profile-item-icon" style="background:var(--green-50);">
+              <svg viewBox="0 0 24 24" style="stroke:var(--green-800)"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </span>
             <span class="profile-item-text" style="color:var(--green-800);">로그아웃</span>
             <span class="profile-item-arrow">›</span>
           </div>
@@ -1841,6 +1854,8 @@ async function doLogin() {
 
     document.getElementById('login-error').textContent = '';
     currentUser = matchedUser;
+    localStorage.setItem('savedLoginId', id);
+    localStorage.setItem('savedLoginPw', pw);
     await seedData();
     initMainApp();
   } catch(e) {
@@ -1858,12 +1873,21 @@ document.getElementById('login-id').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('login-pw').focus();
 });
 
+// 마지막 로그인 정보 복원 및 자동 로그인
+(function restoreLogin() {
+  const savedId = localStorage.getItem('savedLoginId');
+  const savedPw = localStorage.getItem('savedLoginPw');
+  if (savedId && savedPw) {
+    document.getElementById('login-id').value = savedId;
+    document.getElementById('login-pw').value = savedPw;
+    doLogin();
+  }
+})();
+
 function doLogout() {
   stopCamera();
   currentUser = null;
   showScreen('login-screen');
-  document.getElementById('login-id').value = '';
-  document.getElementById('login-pw').value = '';
 }
 
 // ──────────────────────────────────────────────
@@ -2289,7 +2313,7 @@ function changeAdminMonth(delta) {
 function switchAdminTab(tab, el) {
   document.querySelectorAll('#tab-admin .admin-tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
-  ['att','absent','emp','approve-panel','accounts'].forEach(t => {
+  ['att','absent','emp','approve-panel','accounts','reset'].forEach(t => {
     const p = document.getElementById('admin-' + t);
     if (p) p.style.display = (tab === t || (tab === 'approve' && t === 'approve-panel')) ? 'block' : 'none';
   });
@@ -2298,10 +2322,11 @@ function switchAdminTab(tab, el) {
   if (tab === 'emp')      renderAdminEmp();
   if (tab === 'approve')  renderAdminApprovePanel();
   if (tab === 'accounts') renderAdminAccounts();
+  if (tab === 'reset')    renderAdminReset();
 }
 
 function renderAdmin() {
-  ['att','absent','emp','approve-panel','accounts'].forEach(t => {
+  ['att','absent','emp','approve-panel','accounts','reset'].forEach(t => {
     const p = document.getElementById('admin-' + t);
     if (p) p.style.display = 'none';
   });
@@ -2613,6 +2638,63 @@ function renderAdminAccounts() {
     </div>
     <div style="padding:0 16px 20px;">${rows}</div>`;
 }
+
+
+function renderAdminReset() {
+  const panel = document.getElementById('admin-reset');
+  if (!panel) return;
+  panel.innerHTML = `
+    <div style="padding:16px;">
+      <div style="font-size:13px;font-weight:300;color:var(--green-800);margin-bottom:4px;">데이터 초기화</div>
+      <div style="font-size:11px;color:var(--text-light);margin-bottom:20px;">선택한 데이터를 Firebase에서 완전히 삭제합니다. 이 작업은 되돌릴 수 없습니다.</div>
+      <div class="card" style="margin-bottom:12px;border-left:3px solid var(--green-400);">
+        <div style="font-size:14px;font-weight:400;margin-bottom:6px;">출퇴근 기록 초기화</div>
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:12px;">전체 직원의 출퇴근 기록을 삭제합니다.</div>
+        <button onclick="confirmReset('attendance')"
+          style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--green-600);color:#fff;font-size:13px;cursor:pointer;font-weight:400;">
+          🗑 출퇴근 기록 초기화
+        </button>
+      </div>
+      <div class="card" style="margin-bottom:12px;border-left:3px solid var(--green-400);">
+        <div style="font-size:14px;font-weight:400;margin-bottom:6px;">휴가·출장 신청 초기화</div>
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:12px;">전체 직원의 휴가 및 출장 신청 내역을 삭제합니다.</div>
+        <button onclick="confirmReset('requests')"
+          style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--green-600);color:#fff;font-size:13px;cursor:pointer;font-weight:400;">
+          🗑 휴가·출장 기록 초기화
+        </button>
+      </div>
+      <div class="card" style="border-left:3px solid #e44;">
+        <div style="font-size:14px;font-weight:400;margin-bottom:6px;color:#c00;">전체 초기화</div>
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:12px;">출퇴근 기록과 휴가·출장 기록을 모두 삭제합니다.</div>
+        <button onclick="confirmReset('all')"
+          style="width:100%;padding:10px;border-radius:8px;border:none;background:#c00;color:#fff;font-size:13px;cursor:pointer;font-weight:400;">
+          ⚠️ 전체 데이터 초기화
+        </button>
+      </div>
+    </div>`;
+}
+
+async function confirmReset(target) {
+  const labels = { attendance: '출퇴근 기록', requests: '휴가·출장 기록', all: '전체 데이터' };
+  const label = labels[target];
+  if (!confirm(`정말 ${label}을(를) 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  try {
+    if (target === 'attendance' || target === 'all') {
+      await db.ref('mod_v2/attendance').remove();
+      dbCache.attendance = {};
+    }
+    if (target === 'requests' || target === 'all') {
+      await db.ref('mod_v2/requests').remove();
+      dbCache.requests = [];
+    }
+    showToast(`✅ ${label} 초기화가 완료됐습니다`, 'success');
+    renderAdminReset();
+  } catch(e) {
+    showToast('초기화 중 오류가 발생했습니다', 'error');
+    console.error(e);
+  }
+}
+
 
 function saveAccount(uid) {
   const idInput = document.getElementById('acc-id-' + uid);
@@ -3086,26 +3168,32 @@ function scanQRFrame(video) {
 
 function handleQRScan(data) {
   const resDiv = document.getElementById('scan-result');
-  const qrCodes = getData('qr_codes', {});
+  // 하드코딩된 고정값으로 비교 (Firebase 로드 여부 무관하게 동작)
   let location = null;
-  if (data === qrCodes.pocheon) location = '포천 본사';
-  else if (data === qrCodes.anyang) location = '안양 지사';
+  if (data === 'MOD_POCHEON_CHECKIN') location = '포천 본사';
+  else if (data === 'MOD_ANYANG_CHECKIN') location = '안양 지사';
 
   if (location) {
-    const att = getData('attendance', {});
-    att[currentUser.id] = att[currentUser.id] || {};
     const today = todayStr();
     const now = new Date();
     const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    if (!att[currentUser.id][today]?.checkIn) {
-      att[currentUser.id][today] = { checkIn: t, checkOut: null, type: 'office', location };
-      setData('attendance', att);
+    const uid = currentUser.id;
+    const todayRec = (dbCache.attendance && dbCache.attendance[uid]) ? dbCache.attendance[uid][today] : null;
+
+    if (!todayRec?.checkIn) {
+      // 출근 - Firebase에 직접 기록
+      const record = { checkIn: t, checkOut: null, type: 'office', location };
+      dbCache.attendance = dbCache.attendance || {};
+      dbCache.attendance[uid] = dbCache.attendance[uid] || {};
+      dbCache.attendance[uid][today] = record;
+      db.ref(`mod_v2/attendance/${uid}/${today}`).set(record).catch(e => console.error('Firebase 오류:', e));
       updateCheckInUI();
       resDiv.innerHTML = `<p>✅ ${location} 출근 완료!<br><strong>${t}</strong></p>`;
       showToast(`✅ ${location} 출근 완료! ${t}`, 'success');
-    } else if (!att[currentUser.id][today]?.checkOut) {
-      att[currentUser.id][today].checkOut = t;
-      setData('attendance', att);
+    } else if (!todayRec?.checkOut) {
+      // 퇴근 - 기존 record에 퇴근 시간만 추가
+      dbCache.attendance[uid][today].checkOut = t;
+      db.ref(`mod_v2/attendance/${uid}/${today}/checkOut`).set(t).catch(e => console.error('Firebase 오류:', e));
       updateCheckInUI();
       resDiv.innerHTML = `<p>🏁 ${location} 퇴근 완료!<br><strong>${t}</strong></p>`;
       showToast(`🏁 ${location} 퇴근 완료! ${t}`, 'success');
