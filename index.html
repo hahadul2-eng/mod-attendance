@@ -180,7 +180,7 @@
   /* ─── HOME: 명언 카드 + 독 바 스타일 ─── */
   #tab-home {
     flex: 1;
-    display: flex !important;
+    display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
@@ -1923,7 +1923,12 @@ function showScreen(id) {
 let currentTab = 'home';
 function switchTab(tab) {
   stopCamera();
-  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.style.display = 'none';
+  });
+  // #tab-home은 CSS specificity 문제 방지를 위해 명시적으로 처리
+  const homePanel = document.getElementById('tab-home');
+  if (homePanel) homePanel.style.display = 'none';
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   currentTab = tab;
   const panel = document.getElementById('tab-' + tab);
