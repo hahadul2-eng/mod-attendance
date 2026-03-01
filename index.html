@@ -70,9 +70,8 @@
   body {
     font-family: 'Noto Sans KR', sans-serif;
     font-weight: 300;
-    background: linear-gradient(170deg, var(--green-700) 0%, var(--green-600) 60%, var(--green-500) 100%);
+    background: var(--warm-gray);
     color: var(--text-dark);
-    /* Safari 주소창/하단바 고려한 고정 뷰포트 */
     height: 100%;
     height: -webkit-fill-available;
     overflow: hidden;
@@ -84,11 +83,10 @@
   /* ─── APP SHELL ─── */
   #app {
     position: fixed;
-    inset: 0;               /* top:0 right:0 bottom:0 left:0 */
+    inset: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    /* dvh 지원 브라우저: 주소창 제외한 실제 높이 */
     height: 100vh;
     height: 100dvh;
     height: -webkit-fill-available;
@@ -96,13 +94,24 @@
   .screen {
     display: none;
     flex-direction: column;
-    position: absolute;     /* #app 안에서 절대 고정 */
-    inset: 0;               /* 화면 전체 덮기 */
+    position: absolute;
+    inset: 0;
     overflow: hidden;
-    /* PC에서 앱 양옆도 파란 그라데이션으로 채움 */
-    background: linear-gradient(170deg, var(--green-700) 0%, var(--green-600) 60%, var(--green-500) 100%);
+    background: var(--warm-gray);
   }
   .screen.active { display: flex; z-index: 1; }
+  /* 로그인 화면: 파란 그라데이션 전체 확장 */
+  #login-screen {
+    background: linear-gradient(170deg, var(--green-700) 0%, var(--green-600) 60%, var(--green-500) 100%);
+  }
+  /* 메인 앱: 홈 탭일 때 파란색, 나머지는 회색 */
+  #main-screen {
+    background: var(--warm-gray);
+  }
+  /* 홈 탭 활성화 시 main-screen 배경을 파랗게 */
+  #main-screen.home-bg {
+    background: linear-gradient(170deg, var(--green-700) 0%, var(--green-600) 60%, var(--green-500) 100%);
+  }
 
   /* ─── TOPBAR ─── */
   .topbar {
@@ -157,25 +166,24 @@
 
   /* ─── CONTENT AREA ─── */
   .content {
-    flex: 1;
+    flex: 1 1 0;
+    height: 0;
     background: var(--warm-gray);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     min-height: 0;
     padding-bottom: 0;
-    /* 내부 스크롤만 허용, 바깥 문서 스크롤 금지 */
     overscroll-behavior: contain;
   }
   .content.home-active {
+    flex: 1 1 auto;
+    height: auto;
     overflow: hidden;
     padding-bottom: 0;
     overscroll-behavior: none;
   }
-  /* ─── MAIN SCREEN: screen 절대위치 상속 ─── */
-  #main-screen {
-    /* screen의 파란 그라데이션 배경 유지 */
-  }
+  /* ─── MAIN SCREEN ─── */
 
   /* ─── HOME: 명언 카드 + 독 바 스타일 ─── */
   #tab-home {
@@ -1119,16 +1127,21 @@
   /* ─── ANIMATIONS ─── */
   /* 모든 탭 패널: flex 컨테이너를 꽉 채우도록 */
   .tab-panel {
-    flex: 1;
+    /* iOS Safari flex+scroll 버그 픽스:
+       flex:1 만으로는 iOS에서 height 계산 실패 → height:0 + flex:1 1 0 강제 */
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
+    overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
-    min-height: 0;
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
   /* 홈 탭은 overflow 없음 (독 바 레이아웃) */
   #tab-home {
+    flex: 1 1 auto;
+    height: auto;
     overflow: hidden;
     padding-bottom: 0;
   }
@@ -1443,7 +1456,8 @@
           <div id="admin-qrmanage" style="display:none"></div>
           <div id="admin-reset" style="display:none"></div>
           <div id="admin-excel" style="display:none"></div>
-      </div>
+        </div><!-- /admin-content -->
+      </div><!-- /tab-admin -->
 
       <!-- ── 승인 탭 (leader_a / leader_b 전용) ── -->
       <div id="tab-approve" class="tab-panel fade-in" style="display:none">
@@ -1953,6 +1967,12 @@ function switchTab(tab) {
   if (content) {
     if (tab === 'home') content.classList.add('home-active');
     else content.classList.remove('home-active');
+  }
+  // 홈 탭: main-screen 파란 배경 / 나머지: 회색
+  const mainScreen = document.getElementById('main-screen');
+  if (mainScreen) {
+    if (tab === 'home') mainScreen.classList.add('home-bg');
+    else mainScreen.classList.remove('home-bg');
   }
   // 홈 탭: 상단 topbar + 하단 nav 숨김 (독 바가 대신)
   const topbar = document.querySelector('.topbar');
