@@ -1743,7 +1743,8 @@ async function loadAllData() {
   }
   Object.assign(dbCache, data);
   // 초기 custom_users 병합
-  if (data.custom_users) mergeCustomUsers(data.custom_users);: 다른 직원이 데이터 변경 시 즉시 반영
+  if (data.custom_users) mergeCustomUsers(data.custom_users);
+  // 실시간 리스너: 다른 직원이 데이터 변경 시 즉시 반영
   db.ref('mod_v2/attendance').on('value', snap => {
     const v = snap.val();
     if (v !== null) { dbCache.attendance = v; refreshIfActive(); }
