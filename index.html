@@ -1417,9 +1417,7 @@
           <button class="admin-tab active" id="admtab-att"    onclick="switchAdminTab('att',this)">출퇴근</button>
           <button class="admin-tab"        id="admtab-absent" onclick="switchAdminTab('absent',this)">지각/결근</button>
           <button class="admin-tab"        id="admtab-emp"    onclick="switchAdminTab('emp',this)">직원현황</button>
-          <button class="admin-tab"        id="admtab-approve" onclick="switchAdminTab('approve',this)">
-            승인대기<span class="nav-badge" id="admin-approve-badge" style="display:none;position:static;margin-left:4px;transform:none;font-size:9px;padding:0 4px;height:14px;border-radius:7px"></span>
-          </button>
+          <button class="admin-tab"        id="admtab-approve" onclick="switchAdminTab('approve',this)">승인대기</button>
           <button class="admin-tab"        id="admtab-accounts" onclick="switchAdminTab('accounts',this)">계정관리</button>
           <button class="admin-tab"        id="admtab-qrmanage" onclick="switchAdminTab('qrmanage',this)">QR관리</button>
           <button class="admin-tab"        id="admtab-reset" onclick="switchAdminTab('reset',this)" style="display:none">초기화</button>
@@ -3173,17 +3171,7 @@ function renderAdminApprovePanel() {
 }
 
 function updateAdminApproveBadge() {
-  const badge = document.getElementById('admin-approve-badge');
-  if (!badge) return;
-  const pending = getData('requests', []).filter(r => r.status === 'pending' && canApprove(currentUser, r.uid)).length;
-  if (pending > 0) {
-    badge.textContent = pending > 9 ? '9+' : pending;
-    badge.style.display = 'inline-flex';
-    badge.style.alignItems = 'center';
-    badge.style.justifyContent = 'center';
-  } else {
-    badge.style.display = 'none';
-  }
+  // 관리탭 승인대기 배지 비표시 처리됨
 }
 
 // ── 전체 직원 목록 헬퍼 ──
