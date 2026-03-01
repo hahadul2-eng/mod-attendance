@@ -467,6 +467,14 @@
   .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
     border-color: var(--green-400); background: white;
   }
+  /* iOS에서 date input 크기 통일 */
+  .form-group input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 50px;
+    line-height: 50px;
+    padding: 0 16px;
+  }
   .form-group textarea { resize: vertical; min-height: 80px; }
   .btn-primary {
     width: 100%; padding: 15px; border: none; cursor: pointer;
@@ -794,8 +802,8 @@
 
   /* ─── ADMIN ─── */
   .admin-tabs {
-    display: flex; padding: 10px 12px 0; gap: 6px;
-    flex-wrap: wrap; /* 한 줄 넘으면 줄바꿈 */
+    display: flex; padding: 12px 16px 0; gap: 6px;
+    flex-wrap: wrap;
   }
   .admin-tab {
     padding: 6px 11px; border: none; background: white; border-radius: 20px;
@@ -1410,7 +1418,7 @@
           <button class="admin-tab"        id="admtab-absent" onclick="switchAdminTab('absent',this)">지각/결근</button>
           <button class="admin-tab"        id="admtab-emp"    onclick="switchAdminTab('emp',this)">직원현황</button>
           <button class="admin-tab"        id="admtab-approve" onclick="switchAdminTab('approve',this)">
-            승인대기<span class="nav-badge" id="admin-approve-badge" style="display:none;position:static;margin-left:4px;transform:none;font-size:9px;padding:0 4px;height:14px;border-radius:7px">0</span>
+            승인대기<span class="nav-badge" id="admin-approve-badge" style="display:none;position:static;margin-left:4px;transform:none;font-size:9px;padding:0 4px;height:14px;border-radius:7px"></span>
           </button>
           <button class="admin-tab"        id="admtab-accounts" onclick="switchAdminTab('accounts',this)">계정관리</button>
           <button class="admin-tab"        id="admtab-qrmanage" onclick="switchAdminTab('qrmanage',this)">QR관리</button>
