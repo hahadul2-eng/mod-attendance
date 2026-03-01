@@ -2865,6 +2865,12 @@ function closeAppGrid() {
 // ──────────────────────────────────────────────
 // QR 이미지 캐시 (메모리)
 const qrImageCache = {};
+// 페이지 로드 즉시 내장 QR 이미지를 캐시에 저장 (CDN 라이브러리 불필요)
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('qrm-canvas-2');
+  const img = el && el.querySelector('img');
+  if (img && img.src.startsWith('data:')) qrImageCache['qr_img_MOD_ANYANG_CHECKIN'] = img.src;
+});
 
 function drawQrCanvas(canvasId, labelId, code, timeStr) {
   const c = document.getElementById(canvasId);
@@ -2939,6 +2945,15 @@ function autoGenerateQRIfNeeded() {
 }
 
 function renderQrManage() {
+  // DOM 교체 전, 내장 이미지를 먼저 캐시에 저장
+  ['qrm-canvas-1','qrm-canvas-2'].forEach(id => {
+    const el = document.getElementById(id);
+    const img = el && el.querySelector('img');
+    if (img && img.src.startsWith('data:')) {
+      const code = id === 'qrm-canvas-2' ? 'MOD_ANYANG_CHECKIN' : null;
+      if (code && !qrImageCache['qr_img_' + code]) qrImageCache['qr_img_' + code] = img.src;
+    }
+  });
   const qrCodes = getData('qr_codes', null);
   if (!qrCodes || !qrCodes.anyang || !qrCodes.pocheon) {
     // 로딩 중이거나 QR 없음 → 자동 생성 후 렌더
@@ -3034,6 +3049,12 @@ function switchQrTab(tab, el) {
 }
 
 function generateOfficeQR() {
+  // qrm-canvas-2의 내장 이미지를 안양 고정코드 캐시로 미리 저장
+  if (!qrImageCache['qr_img_MOD_ANYANG_CHECKIN']) {
+    const el = document.getElementById('qrm-canvas-2');
+    const img = el && el.querySelector('img');
+    if (img && img.src.startsWith('data:')) qrImageCache['qr_img_MOD_ANYANG_CHECKIN'] = img.src;
+  }
   const qrCodes = getData('qr_codes', {});
   function renderQrToContainer(container, code) {
     if (!container) return;
