@@ -166,19 +166,15 @@
 
   /* ─── CONTENT AREA ─── */
   .content {
-    flex: 1 1 0;
-    height: 0;
+    flex: 1;
+    position: relative;   /* tab-panel absolute 기준점 */
     background: var(--warm-gray);
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
     min-height: 0;
     padding-bottom: 0;
     overscroll-behavior: contain;
   }
   .content.home-active {
-    flex: 1 1 auto;
-    height: auto;
     overflow: hidden;
     padding-bottom: 0;
     overscroll-behavior: none;
@@ -1125,23 +1121,19 @@
   }
 
   /* ─── ANIMATIONS ─── */
-  /* 모든 탭 패널: flex 컨테이너를 꽉 채우도록 */
+  /* 모든 탭 패널: absolute로 content 영역 전체를 차지
+     → iOS Safari flex height 계산 버그 완전 우회 */
   .tab-panel {
-    /* iOS Safari flex+scroll 버그 픽스:
-       flex:1 만으로는 iOS에서 height 계산 실패 → height:0 + flex:1 1 0 강제 */
-    flex: 1 1 0;
-    height: 0;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+    position: absolute;
+    inset: 0;               /* top:0 right:0 bottom:0 left:0 */
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
     padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
-  /* 홈 탭은 overflow 없음 (독 바 레이아웃) */
+  /* 홈 탭은 독 바 레이아웃 — overflow 없음 */
   #tab-home {
-    flex: 1 1 auto;
-    height: auto;
     overflow: hidden;
     padding-bottom: 0;
   }
