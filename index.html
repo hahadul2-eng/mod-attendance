@@ -2066,15 +2066,15 @@ function onDockBellClick() {
 // ──────────────────────────────────────────────
 // RENDER HOME
 // ──────────────────────────────────────────────
-// 명언 목록 (한국 감성 + 업무 관련)
+// 명언 목록 (요일 순환: 일~토 = index 0~6)
 const QUOTES = [
-  { text: "오늘 하루도\n묵묵히 걸어간 발자국이\n내일의 길이 됩니다.", author: "주식회사 모드" },
-  { text: "시작이 없으면\n끝도 없습니다.\n지금 이 순간이 시작입니다.", author: "작자 미상" },
-  { text: "땅 위에 새긴\n우리의 설계가\n사람들의 일상이 됩니다.", author: "주식회사 모드" },
-  { text: "작은 정성이\n모여 큰 결실을\n이루어 냅니다.", author: "작자 미상" },
-  { text: "오늘의 노력은\n내일의 당신을\n만들어 갑니다.", author: "주식회사 모드" },
-  { text: "좋은 일이란\n서두르지 않고\n꾸준히 하는 것입니다.", author: "작자 미상" },
-  { text: "함께 만드는\n공간 하나하나가\n삶의 풍경이 됩니다.", author: "주식회사 모드" },
+  { text: "남들 쉬는 날 제시간에 도착했다면\n그건 성실함을 넘어선 의지다.", author: "주식회사 모드" },       // 일요일
+  { text: "무사히 도착했으면\n오늘 할 일의 절반은 끝난 거다.", author: "주식회사 모드" },                    // 월요일
+  { text: "출근 버튼을 눌렀다면\n이미 오늘의 큰일은 해낸 셈이다.", author: "주식회사 모드" },               // 화요일
+  { text: "지금 이 체크 한 번이\n오늘 하루의 시작을 공식화한다.", author: "주식회사 모드" },                // 수요일
+  { text: "여기까지 왔으면\n오늘은 커피가 아니라 포상급이다.", author: "주식회사 모드" },                   // 목요일
+  { text: "오늘만 지나면 주말,\n침착하게 하나씩 해치우면 된다.", author: "주식회사 모드" },                 // 금요일
+  { text: "주말에 회사까지 왔다면\n이미 오늘 할 일 대부분은 해낸 셈이다.", author: "주식회사 모드" },      // 토요일
 ];
 
 function renderHome() {
@@ -2094,8 +2094,8 @@ function renderHome() {
   const suffix = currentUser.role === 'admin' ? ' 대표이사님' : ' 님';
   if (qn) qn.textContent = currentUser.name + suffix;
 
-  // 명언 로테이션 (날짜 기반 → 매일 바뀜)
-  const q = QUOTES[now.getDate() % QUOTES.length];
+  // 명언 로테이션 (요일 기반 → 월~일 매일 다름)
+  const q = QUOTES[now.getDay()];  // getDay(): 0=일, 1=월, ..., 6=토
   const qt = document.getElementById('qc-quote-text');
   const qa = document.getElementById('qc-quote-author');
   if (qt) qt.innerHTML = q.text.replace(/\n/g, '<br>');
