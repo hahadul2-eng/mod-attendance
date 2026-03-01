@@ -28,6 +28,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     /* Monochromatic: 단일 색조 #1A3DA6 기준, 채도·명도 변화만 */
@@ -1415,6 +1416,7 @@
           </button>
           <button class="admin-tab"        id="admtab-accounts" onclick="switchAdminTab('accounts',this)">계정관리</button>
           <button class="admin-tab"        id="admtab-reset" onclick="switchAdminTab('reset',this)">초기화</button>
+          <button class="admin-tab"        id="admtab-excel" onclick="switchAdminTab('excel',this)">📊 엑셀업로드</button>
         </div>
         <div class="admin-content">
           <div id="admin-att"></div>
@@ -1423,7 +1425,7 @@
           <div id="admin-approve-panel" style="display:none"></div>
           <div id="admin-accounts" style="display:none"></div>
           <div id="admin-reset" style="display:none"></div>
-        </div>
+          <div id="admin-excel" style="display:none"></div>
       </div>
 
       <!-- ── 승인 탭 (leader_a / leader_b 전용) ── -->
@@ -1760,6 +1762,10 @@ async function loadAllData() {
   db.ref('mod_v2/annual_overrides').on('value', snap => {
     const v = snap.val();
     if (v !== null) { dbCache.annual_overrides = v; refreshIfActive(); }
+  });
+  db.ref('mod_v2/leave_settings').on('value', snap => {
+    const v = snap.val();
+    if (v !== null) { dbCache.leave_settings = v; refreshIfActive(); }
   });
   db.ref('mod_v2/accounts').on('value', snap => {
     const v = snap.val();
@@ -2321,7 +2327,7 @@ function changeAdminMonth(delta) {
 function switchAdminTab(tab, el) {
   document.querySelectorAll('#tab-admin .admin-tab').forEach(t => t.classList.remove('active'));
   if (el) el.classList.add('active');
-  ['att','absent','emp','approve-panel','accounts','reset'].forEach(t => {
+  ['att','absent','emp','approve-panel','accounts','reset','excel'].forEach(t => {
     const p = document.getElementById('admin-' + t);
     if (p) p.style.display = (tab === t || (tab === 'approve' && t === 'approve-panel')) ? 'block' : 'none';
   });
@@ -2331,10 +2337,11 @@ function switchAdminTab(tab, el) {
   if (tab === 'approve')  renderAdminApprovePanel();
   if (tab === 'accounts') renderAdminAccounts();
   if (tab === 'reset')    renderAdminReset();
+  if (tab === 'excel')    renderAdminExcel();
 }
 
 function renderAdmin() {
-  ['att','absent','emp','approve-panel','accounts','reset'].forEach(t => {
+  ['att','absent','emp','approve-panel','accounts','reset','excel'].forEach(t => {
     const p = document.getElementById('admin-' + t);
     if (p) p.style.display = 'none';
   });
@@ -2541,15 +2548,19 @@ function renderAdminEmp() {
       else if (rec.checkIn > WORK_START) late++;
     });
 
-    // 연차: total은 annual_overrides (없으면 15), 사용은 승인된 vacation 건
-    const annualTotal = annuals[u.id] !== undefined ? annuals[u.id] : 15;
+    // 연차: leave_settings > annual_overrides > 기본 15
+    const leaveSettings = getData('leave_settings', {});
+    const ls = leaveSettings[u.id] || {};
     const userReqs = reqs.filter(r => r.uid === u.id && r.status === 'approved');
-    const annualUsed = userReqs.filter(r => r.type === 'vacation').reduce((sum, r) => {
+    const annualTotal = ls.annualTotal !== undefined ? ls.annualTotal
+                      : (annuals[u.id] !== undefined ? annuals[u.id] : 15);
+    const vacUsedFromApp = userReqs.filter(r => r.type === 'vacation').reduce((sum, r) => {
       if (!r.vacType) return sum + 1;
       if (r.vacType.startsWith('half')) return sum + 0.5;
       const s = new Date(r.start), e = new Date(r.end);
       return sum + Math.round((e - s) / 86400000) + 1;
     }, 0);
+    const annualUsed = ls.annualUsed !== undefined ? ls.annualUsed : vacUsedFromApp;
     const annualLeft = Math.max(0, annualTotal - annualUsed);
 
     // 출장
@@ -2599,6 +2610,14 @@ function renderAdminEmp() {
           <div style="height:100%;width:${annualTotal>0?Math.min(100,annualUsed/annualTotal*100):0}%;background:linear-gradient(90deg,var(--green-500),var(--green-300));border-radius:2px;"></div>
         </div>
       </div>
+      ${(ls.maternity||ls.paternity||ls.childcare||ls.wedding||ls.remark) ? `
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
+        ${ls.maternity && ls.maternity!==''&&ls.maternity!=='X'&&ls.maternity!=='x' ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#fce4ec;color:#880e4f">출산휴가</span>' : ''}
+        ${ls.paternity && ls.paternity!==''&&ls.paternity!=='X'&&ls.paternity!=='x' ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#e3f2fd;color:#0d47a1">배우자출산</span>' : ''}
+        ${ls.childcare && ls.childcare!==''&&ls.childcare!=='X'&&ls.childcare!=='x' ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#f3e5f5;color:#4a148c">육아휴직</span>' : ''}
+        ${ls.wedding   && ls.wedding!==''  &&ls.wedding!=='X'  &&ls.wedding!=='x'   ? '<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:#fff9c4;color:#f57f17">결혼휴가</span>' : ''}
+        ${ls.remark ? `<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--green-50);color:var(--text-mid)">${ls.remark}</span>` : ''}
+      </div>` : ''}
     </div>`;
   }).join('');
 
@@ -2622,6 +2641,140 @@ function saveAnnual(uid, val) {
   showToast(`${USERS[uid]?.name || uid}님 연차 ${overrides[uid]}일로 저장됐습니다`, 'success');
 }
 
+// ── 엑셀 업로드 ──────────────────────────────────────────────────────────
+function renderAdminExcel() {
+  const panel = document.getElementById('admin-excel');
+  if (!panel) return;
+  const leaveData = getData('leave_settings', {});
+  const allEmp = getAllEmployees();
+
+  // 현재 저장된 데이터 미리보기 테이블
+  const previewRows = allEmp.map(u => {
+    const d = leaveData[u.id] || {};
+    return `<tr style="font-size:11px;border-bottom:1px solid var(--green-100)">
+      <td style="padding:6px 8px;font-weight:400;color:var(--green-900)">${u.name}</td>
+      <td style="padding:6px 8px;color:var(--text-mid)">${u.dept}</td>
+      <td style="padding:6px 8px;text-align:center">${d.annualTotal ?? 15}</td>
+      <td style="padding:6px 8px;text-align:center">${d.annualUsed ?? 0}</td>
+      <td style="padding:6px 8px;text-align:center;color:${((d.annualTotal??15)-(d.annualUsed??0))<=3?'#c00':'var(--green-700)'}">${(d.annualTotal??15)-(d.annualUsed??0)}</td>
+      <td style="padding:6px 8px;text-align:center">${d.maternity||'-'}</td>
+      <td style="padding:6px 8px;text-align:center">${d.paternity||'-'}</td>
+      <td style="padding:6px 8px;text-align:center">${d.wedding||'-'}</td>
+      <td style="padding:6px 8px;text-align:center">${d.sickDays??60}</td>
+      <td style="padding:6px 8px;color:var(--text-light);font-size:10px">${d.remark||''}</td>
+      <td style="padding:6px 8px;text-align:center;font-size:10px;color:var(--text-light)">${d.updatedAt||'-'}</td>
+    </tr>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div style="padding:16px 16px 0">
+      <!-- 업로드 박스 -->
+      <div style="background:var(--green-50);border:2px dashed var(--green-300);border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;">
+        <div style="font-size:32px;margin-bottom:8px">📊</div>
+        <div style="font-size:14px;font-weight:400;color:var(--green-900);margin-bottom:4px">직원 휴가 엑셀 파일 업로드</div>
+        <div style="font-size:11px;color:var(--text-light);margin-bottom:16px">MOD_직원휴가관리.xlsx 파일을 선택하면 Firebase에 자동 반영됩니다</div>
+        <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none" onchange="uploadLeaveExcel(this)">
+        <button onclick="document.getElementById('excel-file-input').click()"
+          style="background:var(--green-600);color:white;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:400;cursor:pointer">
+          📂 파일 선택
+        </button>
+        <div id="excel-upload-status" style="margin-top:12px;font-size:12px;color:var(--text-mid)"></div>
+      </div>
+
+      <!-- 컬럼 설명 -->
+      <div style="background:var(--surface);border-radius:8px;border:1px solid var(--green-100);padding:12px 14px;margin-bottom:16px;font-size:11px;color:var(--text-mid);line-height:1.8">
+        <strong style="color:var(--green-800)">엑셀 시트1 컬럼 구조 (1행~2행: 헤더, 5행부터 데이터)</strong><br>
+        A:직원ID &nbsp;|&nbsp; B:이름 &nbsp;|&nbsp; C:부서 &nbsp;|&nbsp; D:연차총일수 &nbsp;|&nbsp; E:연차사용일 &nbsp;|&nbsp;
+        F:출산전후휴가 &nbsp;|&nbsp; G:배우자출산휴가 &nbsp;|&nbsp; H:육아휴직 &nbsp;|&nbsp; I:결혼휴가 &nbsp;|&nbsp;
+        J:부모사망 &nbsp;|&nbsp; K:배우자자녀사망 &nbsp;|&nbsp; L:형제사망 &nbsp;|&nbsp; M:경조사참석 &nbsp;|&nbsp;
+        N:병가허용일수 &nbsp;|&nbsp; O:무급휴가허용일수 &nbsp;|&nbsp; P:출장횟수 &nbsp;|&nbsp; Q:지각횟수 &nbsp;|&nbsp;
+        R:결근횟수 &nbsp;|&nbsp; S:비고 &nbsp;|&nbsp; T:최종수정일
+      </div>
+
+      <!-- 현재 저장 데이터 미리보기 -->
+      <div style="font-size:12px;font-weight:400;color:var(--green-800);margin-bottom:8px">📋 현재 저장된 직원 휴가 현황</div>
+      <div style="overflow-x:auto;border-radius:8px;border:1px solid var(--green-100);">
+        <table style="width:100%;border-collapse:collapse;min-width:700px">
+          <thead>
+            <tr style="background:var(--green-700);color:white;font-size:11px">
+              <th style="padding:7px 8px;font-weight:400;text-align:left">이름</th>
+              <th style="padding:7px 8px;font-weight:400">부서</th>
+              <th style="padding:7px 8px;font-weight:400">연차총</th>
+              <th style="padding:7px 8px;font-weight:400">사용</th>
+              <th style="padding:7px 8px;font-weight:400">잔여</th>
+              <th style="padding:7px 8px;font-weight:400">출산휴가</th>
+              <th style="padding:7px 8px;font-weight:400">배우자출산</th>
+              <th style="padding:7px 8px;font-weight:400">결혼휴가</th>
+              <th style="padding:7px 8px;font-weight:400">병가허용</th>
+              <th style="padding:7px 8px;font-weight:400;text-align:left">비고</th>
+              <th style="padding:7px 8px;font-weight:400">수정일</th>
+            </tr>
+          </thead>
+          <tbody>${previewRows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+async function uploadLeaveExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('excel-upload-status');
+  statusEl.textContent = '⏳ 파일 읽는 중...';
+
+  try {
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, { type: 'array' });
+    const ws  = wb.Sheets[wb.SheetNames[0]]; // 첫 번째 시트
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+    // 데이터는 5행(index 4)부터 시작
+    const dataRows = rows.slice(4).filter(r => r[0] && String(r[0]).trim());
+    if (!dataRows.length) { statusEl.textContent = '❌ 데이터 행을 찾을 수 없습니다 (5행부터 입력되어 있어야 함)'; return; }
+
+    const now = new Date().toISOString().slice(0,10);
+    const batch = {};
+
+    dataRows.forEach(r => {
+      const uid = String(r[0]).trim();
+      if (!uid) return;
+      batch[uid] = {
+        annualTotal:   Number(r[3])  || 15,
+        annualUsed:    Number(r[4])  || 0,
+        maternity:     String(r[5]).trim()  || '',   // 출산전후휴가
+        paternity:     String(r[6]).trim()  || '',   // 배우자출산휴가
+        childcare:     String(r[7]).trim()  || '',   // 육아휴직
+        wedding:       String(r[8]).trim()  || '',   // 결혼휴가
+        parentDeath:   String(r[9]).trim()  || '',   // 부모사망
+        spouseDeath:   String(r[10]).trim() || '',   // 배우자자녀사망
+        siblingDeath:  String(r[11]).trim() || '',   // 형제사망
+        ceremony:      String(r[12]).trim() || '',   // 경조사참석
+        sickDays:      Number(r[13]) || 60,          // 병가허용
+        unpaidDays:    Number(r[14]) || 10,          // 무급허용
+        tripCount:     Number(r[15]) || 0,
+        lateCount:     Number(r[16]) || 0,
+        absentCount:   Number(r[17]) || 0,
+        remark:        String(r[18]).trim() || '',
+        updatedAt:     String(r[19]).trim() || now,
+      };
+    });
+
+    // annual_overrides와 동기화 (연차총일수)
+    const overrides = getData('annual_overrides', {});
+    Object.keys(batch).forEach(uid => { overrides[uid] = batch[uid].annualTotal; });
+    setData('annual_overrides', overrides);
+    setData('leave_settings', batch);
+
+    statusEl.innerHTML = `<span style="color:var(--green-700)">✅ ${Object.keys(batch).length}명 데이터 Firebase 반영 완료!</span>`;
+    setTimeout(() => renderAdminExcel(), 800);
+    showToast(`✅ ${Object.keys(batch).length}명 휴가 데이터 업로드 완료`, 'success');
+  } catch(e) {
+    console.error(e);
+    statusEl.textContent = '❌ 오류: ' + e.message;
+  }
+  input.value = '';
+}
 // ── 커스텀 직원 병합 ──
 const BASE_USER_IDS = ['mod000','mod001','mod002','mod003','mod004','land001','land002','land003','land004','land005','land006'];
 
