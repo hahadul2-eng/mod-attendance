@@ -1755,7 +1755,12 @@ async function loadAllData() {
     if (v !== null) {
       dbCache.qr_codes = v;
       // qrDrawing 플래그가 없을 때만 재렌더 (generateNewQR 직후 중복 방지)
-      if (typeof currentTab !== 'undefined' && currentTab === 'qrmanage' && !qrDrawing) renderQrManage();
+      // qrDrawing 중에도 캔버스가 없으면 렌더 (탭 재진입 시 등)
+      if (typeof currentTab !== 'undefined' && currentTab === 'qrmanage') {
+        const hasCanvas = document.querySelector('#qrm-canvas-1 canvas, #qrm-canvas-2 canvas');
+        if (!qrDrawing || !hasCanvas) renderQrManage();
+      }
+      if (typeof currentTab !== 'undefined' && currentTab === 'qr') generateOfficeQR();
     }
   });
 }
@@ -2878,7 +2883,16 @@ function drawQrCanvas(canvasId, labelId, code, timeStr) {
 }
 
 function renderQrManage() {
-  const qrCodes = getData('qr_codes', {});
+  const qrCodes = getData('qr_codes', null);
+  if (qrCodes === null) {
+    // 아직 Firebase 데이터 로딩 중 - 로딩 표시
+    const loading = '<div style="color:var(--text-light);font-size:13px">로딩 중...</div>';
+    const c1 = document.getElementById('qrm-canvas-1');
+    const c2 = document.getElementById('qrm-canvas-2');
+    if (c1 && !c1.querySelector('canvas')) c1.innerHTML = loading;
+    if (c2 && !c2.querySelector('canvas')) c2.innerHTML = loading;
+    return;
+  }
   drawQrCanvas('qrm-canvas-1', 'qrm-code-1', qrCodes.pocheon, qrCodes.pocheon_time);
   drawQrCanvas('qrm-canvas-2', 'qrm-code-2', qrCodes.anyang, qrCodes.anyang_time);
 }
