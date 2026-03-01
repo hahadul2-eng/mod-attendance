@@ -2875,25 +2875,18 @@ function drawQrCanvas(canvasId, labelId, code, timeStr) {
     showQrImage(c, lbl, qrImageCache[cacheKey], timeStr);
     return;
   }
-  // localStorage 캐시 확인
-  try {
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      qrImageCache[cacheKey] = cached;
-      showQrImage(c, lbl, cached, timeStr);
-      return;
-    }
-  } catch(e) {}
   // 새로 생성
+  if (typeof QRCode === 'undefined') {
+    c.innerHTML = '<div style="color:red;font-size:12px">QRCode 라이브러리 로드 오류</div>';
+    return;
+  }
   c.innerHTML = '<div style="color:var(--text-light);font-size:12px">QR 생성 중...</div>';
   QRCode.toDataURL(code, { width: 220, margin: 2, color: { dark: '#0A1E4F', light: '#ffffff' }, type: 'image/png' }, (err, url) => {
     if (err || !url) {
       c.innerHTML = `<div style="color:red;font-size:12px">QR 오류</div>`;
       return;
     }
-    // 캐시에 저장
     qrImageCache[cacheKey] = url;
-    try { localStorage.setItem(cacheKey, url); } catch(e) {}
     showQrImage(c, lbl, url, timeStr);
   });
 }
@@ -2942,6 +2935,7 @@ function renderQrManage() {
     if (c2) c2.innerHTML = loading;
     // Firebase 데이터 도착 기다렸다가 자동 생성 시도
     setTimeout(() => {
+      if (!document.getElementById('qrm-canvas-1') || !document.getElementById('qrm-canvas-2')) return;
       const generated = autoGenerateQRIfNeeded();
       drawQrCanvas('qrm-canvas-1', 'qrm-code-1', generated.pocheon, generated.pocheon_time);
       drawQrCanvas('qrm-canvas-2', 'qrm-code-2', generated.anyang, generated.anyang_time);
@@ -3017,21 +3011,23 @@ function generateOfficeQR() {
       container.innerHTML = '<div style="color:var(--text-light);font-size:12px;padding:20px">관리자가 QR을 아직 생성하지 않았습니다</div>';
       return;
     }
-    // 캐시 확인 후 즉시 표시
+    // 메모리 캐시 확인 후 즉시 표시
     const cacheKey = 'qr_img_' + code;
-    const cached = qrImageCache[cacheKey] || (() => { try { return localStorage.getItem(cacheKey); } catch(e) {} })();
-    if (cached) {
+    if (qrImageCache[cacheKey]) {
       const img = document.createElement('img');
-      img.src = cached;
+      img.src = qrImageCache[cacheKey];
       img.style.cssText = 'width:200px;height:200px;border-radius:8px;display:block';
       container.innerHTML = '';
       container.appendChild(img);
       return;
     }
+    if (typeof QRCode === 'undefined') {
+      container.innerHTML = '<div style="color:red;font-size:12px">QRCode 라이브러리 로드 오류</div>';
+      return;
+    }
     QRCode.toDataURL(code, { width: 200, margin: 2, color: { dark: '#0A1E4F', light: '#ffffff' }, type: 'image/png' }, (err, url) => {
       if (err || !url) { container.innerHTML = `<div style="color:red;font-size:12px">QR 생성 오류</div>`; return; }
       qrImageCache[cacheKey] = url;
-      try { localStorage.setItem(cacheKey, url); } catch(e) {}
       const img = document.createElement('img');
       img.src = url;
       img.style.cssText = 'width:200px;height:200px;border-radius:8px;display:block';
@@ -3046,6 +3042,7 @@ function generateOfficeQR() {
 async function startCamera() {
   if (stream) { showToast('카메라가 이미 작동 중입니다'); return; }
   const resDiv = document.getElementById('scan-result');
+  if (!resDiv) return;
   resDiv.classList.remove('show');
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
@@ -3075,7 +3072,7 @@ function scanQRFrame(video) {
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts:'dontInvert' });
+  const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 3 });
   if (code) {
     handleQRScan(code.data);
     scanning = false;
