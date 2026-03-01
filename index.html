@@ -2875,13 +2875,20 @@ function drawQrCanvas(canvasId, labelId, code, timeStr) {
     if (lbl) lbl.textContent = '';
     return;
   }
-  // 메모리 캐시에 이미 있으면 즉시 표시
   const cacheKey = 'qr_img_' + code;
+  // 컨테이너에 이미 내장된 이미지가 있으면 캐시로 등록 후 사용 (CDN 불필요)
+  if (!qrImageCache[cacheKey]) {
+    const existingImg = c.querySelector('img');
+    if (existingImg && existingImg.src.startsWith('data:')) {
+      qrImageCache[cacheKey] = existingImg.src;
+    }
+  }
+  // 메모리 캐시에 있으면 즉시 표시
   if (qrImageCache[cacheKey]) {
     showQrImage(c, lbl, qrImageCache[cacheKey], timeStr);
     return;
   }
-  // 새로 생성
+  // 캐시 없으면 라이브러리로 생성
   if (typeof QRCode === 'undefined') {
     c.innerHTML = '<div style="color:var(--text-light);font-size:12px">QR 생성 중...</div>';
     setTimeout(() => drawQrCanvas(canvasId, labelId, code, timeStr), 500);
@@ -3036,6 +3043,14 @@ function generateOfficeQR() {
     }
     // 메모리 캐시 확인 후 즉시 표시
     const cacheKey = 'qr_img_' + code;
+    // QR관리 탭의 내장 이미지가 캐시에 있으면 재사용 (CDN 불필요)
+    if (!qrImageCache[cacheKey]) {
+      const canvasEl = document.getElementById('qrm-canvas-2');
+      const embeddedImg = canvasEl && canvasEl.querySelector('img');
+      if (embeddedImg && embeddedImg.src.startsWith('data:')) {
+        qrImageCache[cacheKey] = embeddedImg.src;
+      }
+    }
     if (qrImageCache[cacheKey]) {
       const img = document.createElement('img');
       img.src = qrImageCache[cacheKey];
