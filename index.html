@@ -3099,11 +3099,13 @@ function handleQRScan(data) {
     if (!att[currentUser.id][today]?.checkIn) {
       att[currentUser.id][today] = { checkIn: t, checkOut: null, type: 'office', location };
       setData('attendance', att);
+      updateCheckInUI();
       resDiv.innerHTML = `<p>✅ ${location} 출근 완료!<br><strong>${t}</strong></p>`;
       showToast(`✅ ${location} 출근 완료! ${t}`, 'success');
     } else if (!att[currentUser.id][today]?.checkOut) {
       att[currentUser.id][today].checkOut = t;
       setData('attendance', att);
+      updateCheckInUI();
       resDiv.innerHTML = `<p>🏁 ${location} 퇴근 완료!<br><strong>${t}</strong></p>`;
       showToast(`🏁 ${location} 퇴근 완료! ${t}`, 'success');
     } else {
