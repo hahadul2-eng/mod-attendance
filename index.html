@@ -1305,12 +1305,8 @@
       <!-- ── QR 탭 ── -->
       <div id="tab-qr" class="tab-panel fade-in" style="display:none">
         <div class="qr-container">
-          <div class="qr-tabs">
-            <button class="qr-tab active" onclick="switchQrTab('scan',this)">QR 스캔</button>
-            <button class="qr-tab" onclick="switchQrTab('display',this)">사무실 QR</button>
-          </div>
 
-          <!-- Scanner -->
+          <!-- Scanner only -->
           <div id="qr-scan-panel">
             <div class="scanner-wrap">
               <div id="qr-video-container">
@@ -1331,31 +1327,8 @@
               <button class="btn-secondary" onclick="startCamera()" style="margin:4px">📷 카메라 시작</button>
               <button class="btn-secondary" onclick="stopCamera()" style="margin:4px">⏹ 카메라 종료</button>
             </div>
-            <div style="margin-top: 12px;" class="card">
-              <p style="font-size:13px; color:var(--text-light); text-align:center; margin-bottom:12px;">카메라 없이 직접 출퇴근 처리</p>
-              <div style="display:flex; gap:10px;">
-                <button class="clock-btn checkin" style="flex:1; padding:12px; font-size:14px;" onclick="doCheckIn()">✅ 출근</button>
-                <button class="clock-btn checkout" style="flex:1; padding:12px; font-size:14px;" onclick="doCheckOut()">🏁 퇴근</button>
-              </div>
-            </div>
           </div>
 
-          <!-- Display QR -->
-          <div id="qr-display-panel" style="display:none">
-            <div class="qr-display-wrap">
-              <h3>포천 사무소</h3>
-              <p>아래 QR 코드를 직원이 스캔하면 출퇴근이 기록됩니다</p>
-              <div id="qr-canvas-container"></div>
-              <div class="qr-location-tag">📍 경기도 포천시 본사</div>
-              <br>
-              <button class="qr-refresh-btn" onclick="generateOfficeQR()">🔄 QR 새로고침</button>
-            </div>
-            <div style="margin-top:12px;" class="card">
-              <div class="card-title">안양 사무소</div>
-              <div id="qr-canvas-container2"></div>
-              <div class="qr-location-tag" style="margin-top:12px;">📍 경기도 안양시 지사</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -3530,13 +3503,9 @@ let scanning = false;
 let scanInterval = null;
 
 function switchQrTab(tab, el) {
-  document.querySelectorAll('.qr-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('qr-scan-panel').style.display = tab==='scan'?'block':'none';
-  document.getElementById('qr-display-panel').style.display = tab==='display'?'block':'none';
-  if (tab !== 'scan') stopCamera();
-  if (tab === 'display') generateOfficeQR();
+  // 사무실 QR 탭 제거됨 — 스캔 탭만 존재
 }
+
 
 function generateOfficeQR() {
   const qrCodes = getData('qr_codes', {});
