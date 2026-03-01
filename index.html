@@ -1662,7 +1662,7 @@
 //   leader_b → B팀장: B팀 직원 승인 권한
 //   employee → 일반 직원: 자신의 근태만 확인/신청 가능
 
-const USERS = {
+let USERS = {
   // ── CEO ──
   mod000: { id:'mod000', name:'김둘이', dept:'CEO',  role:'admin',    avatar:'👑', pw:'1111', loginId:'mod' },
 
@@ -1742,8 +1742,8 @@ async function loadAllData() {
     data.requests = Object.values(data.requests);
   }
   Object.assign(dbCache, data);
-
-  // 실시간 리스너: 다른 직원이 데이터 변경 시 즉시 반영
+  // 초기 custom_users 병합
+  if (data.custom_users) mergeCustomUsers(data.custom_users);: 다른 직원이 데이터 변경 시 즉시 반영
   db.ref('mod_v2/attendance').on('value', snap => {
     const v = snap.val();
     if (v !== null) { dbCache.attendance = v; refreshIfActive(); }
@@ -1764,8 +1764,15 @@ async function loadAllData() {
     const v = snap.val();
     if (v !== null) { dbCache.accounts = v; }
   });
-  db.ref('mod_v2/qr_codes').on('value', snap => {
-    const v = snap.val();
+  db.ref('mod_v2/custom_users').on('value', snap => {
+    const v = snap.val() || {};
+    dbCache.custom_users = v;
+    // USERS에 병합 (기존 하드코딩 직원은 유지)
+    mergeCustomUsers(v);
+    if (currentUser) refreshIfActive();
+  });
+
+  db.ref('mod_v2/qr_codes').on('value', snap => {    const v = snap.val();
     if (v !== null) {
       // 고정값과 다르면 강제 업데이트
       if (v.anyang !== 'MOD_ANYANG_CHECKIN' || v.pocheon !== 'MOD_POCHEON_CHECKIN') {
@@ -2504,10 +2511,10 @@ function renderAdminAbsent() {
 function renderAdminEmp() {
   const panel = document.getElementById('admin-emp');
   if (!panel) return;
-  const att      = getData('attendance', {});
-  const reqs     = getData('requests', []);
-  const annuals  = getData('annual_overrides', {}); // 연차 기입 저장소
-  const allEmp   = getAllEmployees();
+  const att     = getData('attendance', {});
+  const reqs    = getData('requests', []);
+  const annuals = getData('annual_overrides', {});
+  const allEmp  = getAllEmployees();
   const pad = n => String(n).padStart(2,'0');
   const yr = adminViewYear, mo = adminViewMonth;
   const daysInMonth = new Date(yr, mo, 0).getDate();
@@ -2516,11 +2523,13 @@ function renderAdminEmp() {
   // 이번 달 평일 목록
   const weekdays = [];
   for (let d = 1; d <= daysInMonth; d++) {
-    const ds = `\${yr}-\${pad(mo)}-\${pad(d)}`;
+    const ds = `${yr}-${pad(mo)}-${pad(d)}`;
     if (ds > today) break;
     const dow = new Date(ds).getDay();
     if (dow !== 0 && dow !== 6) weekdays.push(ds);
   }
+
+  const vacMap = { annual:'연차', half_am:'오전반차', half_pm:'오후반차', sick:'병가', special:'경조사', unpaid:'무급' };
 
   const rows = allEmp.map(u => {
     const uAtt = att[u.id] || {};
@@ -2530,42 +2539,63 @@ function renderAdminEmp() {
       if (!rec?.checkIn) absent++;
       else if (rec.checkIn > WORK_START) late++;
     });
-    // 출장: 이번 달 승인된 출장 건수
-    const trips = reqs.filter(r =>
-      r.uid === u.id && r.type === 'trip' && r.status === 'approved' &&
-      r.start && r.start.startsWith(`\${yr}-\${pad(mo)}`)
-    ).length;
-    // 연차 기본값: ANNUAL_DAYS, 관리자가 기입하면 annual_overrides에 저장
-    const annualVal = annuals[u.id] !== undefined ? annuals[u.id] : ANNUAL_DAYS;
+
+    // 연차: total은 annual_overrides (없으면 15), 사용은 승인된 vacation 건
+    const annualTotal = annuals[u.id] !== undefined ? annuals[u.id] : 15;
+    const userReqs = reqs.filter(r => r.uid === u.id && r.status === 'approved');
+    const annualUsed = userReqs.filter(r => r.type === 'vacation').reduce((sum, r) => {
+      if (!r.vacType) return sum + 1;
+      if (r.vacType.startsWith('half')) return sum + 0.5;
+      const s = new Date(r.start), e = new Date(r.end);
+      return sum + Math.round((e - s) / 86400000) + 1;
+    }, 0);
+    const annualLeft = Math.max(0, annualTotal - annualUsed);
+
+    // 출장
+    const trips = userReqs.filter(r => r.type === 'trip').length;
+
+    const leftColor = annualLeft <= 3 ? '#e44' : annualLeft <= 7 ? 'var(--orange)' : 'var(--green-600)';
 
     return `
-    <div class="emp-row" data-uid="\${u.id}">
-      <div class="emp-row-left">
-        <span class="emp-avatar">\${u.avatar}</span>
-        <div class="emp-row-info">
-          <span class="emp-row-name">\${u.name}</span>
-          <span class="emp-row-dept">\${u.dept}</span>
+    <div style="background:var(--surface);border-radius:12px;border:1px solid var(--green-100);padding:14px 16px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px">${u.avatar}</span>
+          <div>
+            <div style="font-size:14px;font-weight:400;color:var(--green-900)">${u.name}</div>
+            <div style="font-size:11px;color:var(--text-light)">${u.dept} · ${getRoleLabel(u)}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <span style="font-size:11px;padding:2px 7px;border-radius:10px;background:${late>0?'#fff3e0':'var(--green-50)'};color:${late>0?'var(--orange)':'var(--green-600)'}">지각 ${late}</span>
+          <span style="font-size:11px;padding:2px 7px;border-radius:10px;background:${absent>0?'#fee':'var(--green-50)'};color:${absent>0?'#c00':'var(--green-600)'}">결근 ${absent}</span>
+          <span style="font-size:11px;padding:2px 7px;border-radius:10px;background:var(--green-50);color:var(--green-600)">출장 ${trips}</span>
         </div>
       </div>
-      <div class="emp-row-stats">
-        <div class="emp-stat-item \${late > 0 ? 'stat-late' : 'stat-ok'}">
-          <div class="emp-stat-val">\${late}</div>
-          <div class="emp-stat-lbl">지각</div>
+      <!-- 연차 섹션 -->
+      <div style="background:var(--green-50);border-radius:8px;padding:10px 12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:11px;color:var(--text-light)">연차 현황</span>
+          <span style="font-size:12px;font-weight:400;color:${leftColor}">잔여 ${annualLeft}일</span>
         </div>
-        <div class="emp-stat-item \${absent > 0 ? 'stat-absent' : 'stat-ok'}">
-          <div class="emp-stat-val">\${absent}</div>
-          <div class="emp-stat-lbl">결근</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;">
+          <div>
+            <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">총 연차</div>
+            <input type="number" min="0" max="99" value="${annualTotal}" id="annual-${u.id}"
+              onchange="saveAnnual('${u.id}', this.value)"
+              style="width:100%;padding:6px 8px;border-radius:6px;border:1px solid var(--green-200);background:var(--surface);color:var(--green-900);font-size:13px;box-sizing:border-box;text-align:center;">
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">사용</div>
+            <div style="font-size:16px;font-weight:300;color:var(--orange)">${annualUsed}</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">잔여</div>
+            <div style="font-size:16px;font-weight:300;color:${leftColor}">${annualLeft}</div>
+          </div>
         </div>
-        <div class="emp-stat-item stat-trip">
-          <div class="emp-stat-val">\${trips}</div>
-          <div class="emp-stat-lbl">출장</div>
-        </div>
-        <div class="emp-stat-item emp-annual-wrap">
-          <input class="emp-annual-input" type="number" min="0" max="30"
-            value="\${annualVal}" id="annual-\${u.id}"
-            onchange="saveAnnual('\${u.id}', this.value)"
-            title="연차일수 기입">
-          <div class="emp-stat-lbl">연차</div>
+        <div style="margin-top:8px;height:4px;background:var(--green-100);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${annualTotal>0?Math.min(100,annualUsed/annualTotal*100):0}%;background:linear-gradient(90deg,var(--green-500),var(--green-300));border-radius:2px;"></div>
         </div>
       </div>
     </div>`;
@@ -2576,14 +2606,12 @@ function renderAdminEmp() {
       <span style="font-size:13px;font-weight:300;color:var(--green-800)">직원현황</span>
       <div class="mgmt-month-nav" style="transform:scale(0.85);transform-origin:right">
         <button onclick="changeAdminMonth(-1)">‹</button>
-        <span>\${yr}년 \${mo}월</span>
+        <span>${yr}년 ${mo}월</span>
         <button onclick="changeAdminMonth(1)">›</button>
       </div>
     </div>
-    <div style="padding:0 16px 4px;font-size:10px;color:var(--text-light)">
-      지각·결근은 이번 달 기준 · 연차는 직접 입력 후 저장됩니다
-    </div>
-    <div class="emp-list-wrap">\${rows}</div>`;
+    <div style="padding:0 16px 4px;font-size:10px;color:var(--text-light)">총 연차 칸을 직접 수정하면 자동 저장됩니다</div>
+    <div style="padding:0 16px 20px;">${rows}</div>`;
 }
 
 function saveAnnual(uid, val) {
@@ -2593,24 +2621,96 @@ function saveAnnual(uid, val) {
   showToast(`${USERS[uid]?.name || uid}님 연차 ${overrides[uid]}일로 저장됐습니다`, 'success');
 }
 
+// ── 커스텀 직원 병합 ──
+const BASE_USER_IDS = ['mod000','mod001','mod002','mod003','mod004','land001','land002','land003','land004','land005','land006'];
+
+function mergeCustomUsers(customUsers) {
+  // 기존 커스텀 유저 제거 후 재병합
+  Object.keys(USERS).forEach(k => { if (!BASE_USER_IDS.includes(k)) delete USERS[k]; });
+  Object.values(customUsers).forEach(u => { USERS[u.id] = u; });
+}
+
+async function addEmployee() {
+  const name = document.getElementById('new-emp-name').value.trim();
+  const loginId = document.getElementById('new-emp-id').value.trim();
+  const pw = document.getElementById('new-emp-pw').value.trim();
+  const dept = document.getElementById('new-emp-dept').value.trim();
+  const role = document.getElementById('new-emp-role').value;
+  const team = document.getElementById('new-emp-team').value;
+
+  if (!name || !loginId || !pw || !dept) { showToast('모든 필드를 입력하세요', 'error'); return; }
+
+  // 아이디 중복 체크
+  const accounts = getData('accounts', {});
+  const allLoginIds = Object.values(USERS).map(u => accounts[u.id]?.loginId || u.loginId || u.id);
+  if (allLoginIds.includes(loginId)) { showToast('이미 사용 중인 아이디입니다', 'error'); return; }
+
+  const uid = 'usr_' + Date.now();
+  const avatarMap = { admin:'📋', leader_a:'🏅', leader_b:'🏅', employee:'👤' };
+  const newUser = { id: uid, name, dept, role, pw, loginId, avatar: avatarMap[role] || '👤' };
+  if (team) newUser.team = team;
+
+  try {
+    await db.ref(`mod_v2/custom_users/${uid}`).set(newUser);
+    // accounts에도 등록
+    accounts[uid] = { loginId, pw };
+    await db.ref(`mod_v2/accounts/${uid}`).set({ loginId, pw });
+    dbCache.accounts = accounts;
+    showToast(`✅ ${name}님 계정이 추가됐습니다`, 'success');
+    renderAdminAccounts();
+  } catch(e) {
+    showToast('추가 중 오류가 발생했습니다', 'error');
+    console.error(e);
+  }
+}
+
+async function deleteEmployee(uid) {
+  const user = USERS[uid];
+  if (!user) return;
+  if (uid === currentUser.id) { showToast('본인 계정은 삭제할 수 없습니다', 'error'); return; }
+  if (BASE_USER_IDS.includes(uid)) { showToast('기본 직원은 삭제할 수 없습니다', 'error'); return; }
+  if (!confirm(`${user.name}님의 계정을 삭제하시겠습니까?\n출퇴근·휴가 기록도 함께 삭제됩니다.`)) return;
+  try {
+    await db.ref(`mod_v2/custom_users/${uid}`).remove();
+    await db.ref(`mod_v2/accounts/${uid}`).remove();
+    await db.ref(`mod_v2/attendance/${uid}`).remove();
+    // requests에서 해당 직원 항목 제거
+    const reqs = getData('requests', []).filter(r => r.uid !== uid);
+    dbCache.requests = reqs;
+    await db.ref('mod_v2/requests').set(reqs.length ? reqs : null);
+    delete USERS[uid];
+    showToast(`✅ ${user.name}님 계정이 삭제됐습니다`, 'success');
+    renderAdminAccounts();
+  } catch(e) {
+    showToast('삭제 중 오류가 발생했습니다', 'error');
+    console.error(e);
+  }
+}
+
 // ── 계정관리 (아이디 / 비밀번호 변경) ──
 function renderAdminAccounts() {
   const panel = document.getElementById('admin-accounts');
   if (!panel) return;
   const accounts = getData('accounts', {});
+  const isCustom = uid => !BASE_USER_IDS.includes(uid);
 
   const rows = Object.values(USERS).map(u => {
     const acc = accounts[u.id] || {};
-    const currentId = acc.loginId || u.id;
+    const currentId = acc.loginId || u.loginId || u.id;
     const currentPw = acc.pw || u.pw;
+    const canDelete = isCustom(u.id) && u.id !== currentUser.id;
     return `
     <div style="background:var(--green-50);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="font-size:20px">${u.avatar}</span>
-        <div>
-          <div style="font-size:14px;font-weight:500;color:var(--green-900)">${u.name}</div>
-          <div style="font-size:11px;color:var(--text-light)">${u.dept} · ${getRoleLabel(u)}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px">${u.avatar}</span>
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--green-900)">${u.name}</div>
+            <div style="font-size:11px;color:var(--text-light)">${u.dept} · ${getRoleLabel(u)}</div>
+          </div>
         </div>
+        ${canDelete ? `<button onclick="deleteEmployee('${u.id}')"
+          style="padding:4px 10px;border-radius:6px;border:none;background:#fee;color:#c00;font-size:11px;cursor:pointer;">삭제</button>` : ''}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
         <div>
@@ -2631,12 +2731,66 @@ function renderAdminAccounts() {
     </div>`;
   }).join('');
 
+  const addForm = `
+    <div style="border:1.5px dashed var(--green-300);border-radius:var(--radius-sm);padding:14px 16px;margin-top:4px;">
+      <div style="font-size:13px;font-weight:400;color:var(--green-800);margin-bottom:12px;">+ 직원 추가</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">이름</div>
+          <input id="new-emp-name" type="text" placeholder="홍길동"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--green-200);background:var(--surface);color:var(--green-900);font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">부서</div>
+          <input id="new-emp-dept" type="text" placeholder="기술A팀"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--green-200);background:var(--surface);color:var(--green-900);font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div>
+          <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">아이디</div>
+          <input id="new-emp-id" type="text" placeholder="로그인 아이디"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--green-200);background:var(--surface);color:var(--green-900);font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">비밀번호</div>
+          <input id="new-emp-pw" type="text" placeholder="초기 비밀번호"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--green-200);background:var(--surface);color:var(--green-900);font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div>
+          <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">권한</div>
+          <select id="new-emp-role"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--green-200);background:var(--surface);color:var(--green-900);font-size:13px;box-sizing:border-box;">
+            <option value="employee">👤 일반직원</option>
+            <option value="leader_a">🏅 A팀장</option>
+            <option value="leader_b">🏅 B팀장</option>
+            <option value="admin">📋 관리자</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text-light);margin-bottom:4px;">팀 (선택)</div>
+          <select id="new-emp-team"
+            style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--green-200);background:var(--surface);color:var(--green-900);font-size:13px;box-sizing:border-box;">
+            <option value="">없음</option>
+            <option value="A">A팀</option>
+            <option value="B">B팀</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="addEmployee()"
+        style="width:100%;padding:10px;border-radius:8px;border:none;background:var(--green-600);color:#fff;font-size:13px;cursor:pointer;font-weight:400;">
+        직원 추가
+      </button>
+    </div>`;
+
   panel.innerHTML = `
     <div style="padding:12px 16px 8px;">
       <span style="font-size:13px;font-weight:300;color:var(--green-800)">계정관리</span>
       <div style="font-size:10px;color:var(--text-light);margin-top:2px;">아이디·비밀번호 변경 후 저장 버튼을 누르세요</div>
     </div>
-    <div style="padding:0 16px 20px;">${rows}</div>`;
+    <div style="padding:0 16px 20px;">${rows}${addForm}</div>`;
 }
 
 
@@ -2735,13 +2889,13 @@ function renderAdminApprovePanel() {
 
   panel.innerHTML = `
     <div style="padding:14px 16px 6px">
-      <div style="font-size:13px;font-weight:300;color:var(--green-800)">대기 중 <span style="color:var(--green-500)">\${pending.length}건</span></div>
+      <div style="font-size:13px;font-weight:300;color:var(--green-800)">대기 중 <span style="color:var(--green-500)">${pending.length}건</span></div>
     </div>
-    <div style="margin:0 16px">\${pendingHTML}</div>
+    <div style="margin:0 16px">${pendingHTML}</div>
     <div style="padding:14px 16px 6px;margin-top:8px;border-top:1px solid var(--green-100)">
       <div style="font-size:13px;font-weight:300;color:var(--text-mid)">처리 완료</div>
     </div>
-    <div style="margin:0 16px 16px">\${doneHTML}</div>`;
+    <div style="margin:0 16px 16px">${doneHTML}</div>`;
 }
 
 function updateAdminApproveBadge() {
