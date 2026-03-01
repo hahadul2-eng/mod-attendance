@@ -1121,38 +1121,45 @@
   }
 
   /* ─── EGG CHARACTER ─── */
+  /* 달걀 무대: tab-home flex 컬럼 내, quote-card 아래 / home-dock 위 */
+  .egg-stage {
+    position: relative;
+    width: 100%;
+    height: 52px;
+    flex-shrink: 0;
+    overflow: visible;
+    z-index: 5;
+    background: transparent;
+  }
   #egg-character {
     position: absolute;
-    bottom: 90px;          /* qc-footer 위 여백 */
+    bottom: 4px;
     left: 0;
     width: 38px;
     height: 46px;
-    pointer-events: none;  /* 터치 통과 */
-    z-index: 3;
+    pointer-events: none;
     transform-origin: center bottom;
     will-change: transform;
   }
-  /* 눈 깜빡임 */
-  @keyframes eyeBlink {
-    0%, 90%, 100% { transform: scaleY(1); }
-    95% { transform: scaleY(0.1); }
-  }
-  .egg-eye { animation: eyeBlink 3.5s ease-in-out infinite; transform-origin: center center; }
-  .egg-eye-r { animation: eyeBlink 3.5s ease-in-out infinite 0.15s; transform-origin: center center; }
-  /* 통통 튀는 그림자 */
   #egg-shadow {
     position: absolute;
-    bottom: 85px;
+    bottom: 2px;
     left: 0;
     width: 30px;
-    height: 8px;
+    height: 7px;
     background: rgba(0,0,0,0.18);
     border-radius: 50%;
     pointer-events: none;
-    z-index: 2;
-    transform-origin: center center;
     will-change: transform;
+    transform-origin: center center;
   }
+  /* 눈 깜빡임 */
+  @keyframes eyeBlink {
+    0%, 88%, 100% { transform: scaleY(1); }
+    93% { transform: scaleY(0.08); }
+  }
+  .egg-eye  { animation: eyeBlink 3.5s ease-in-out infinite; transform-origin: center center; }
+  .egg-eye-r{ animation: eyeBlink 3.5s ease-in-out infinite 0.2s; transform-origin: center center; }
 
   /* ─── ANIMATIONS ─── */
   /* 모든 탭 패널: absolute로 content 영역 전체를 차지
@@ -1270,29 +1277,25 @@
             </div>
           </div>
 
-        <!-- 🥚 달걀 캐릭터 & 그림자 (quote-card 기준 절대위치) -->
-        <div id="egg-shadow"></div>
-        <div id="egg-character">
-          <svg viewBox="0 0 38 46" width="38" height="46" xmlns="http://www.w3.org/2000/svg">
-            <!-- 달걀 몸통 -->
-            <ellipse cx="19" cy="26" rx="17" ry="20" fill="#FFF8EE" stroke="#E8D5B5" stroke-width="1.2"/>
-            <!-- 왼쪽 눈 -->
-            <ellipse class="egg-eye" cx="13" cy="23" rx="2.2" ry="2.8" fill="#2C2C2C"/>
-            <ellipse cx="13.8" cy="22.2" rx="0.7" ry="0.9" fill="white" opacity="0.8"/>
-            <!-- 오른쪽 눈 -->
-            <ellipse class="egg-eye-r" cx="25" cy="23" rx="2.2" ry="2.8" fill="#2C2C2C"/>
-            <ellipse cx="25.8" cy="22.2" rx="0.7" ry="0.9" fill="white" opacity="0.8"/>
-            <!-- 볼터치 -->
-            <ellipse cx="9.5" cy="28" rx="3.5" ry="2" fill="#FFB3B3" opacity="0.45"/>
-            <ellipse cx="28.5" cy="28" rx="3.5" ry="2" fill="#FFB3B3" opacity="0.45"/>
-            <!-- 입 -->
-            <path d="M14.5 31 Q19 35.5 23.5 31" stroke="#2C2C2C" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-            <!-- 달걀 윗부분 광택 -->
-            <ellipse cx="13" cy="12" rx="5" ry="3.5" fill="white" opacity="0.25" transform="rotate(-20, 13, 12)"/>
-          </svg>
-        </div>
-
+        <!-- 🥚 달걀 무대 (quote-card 밖, overflow 클리핑 방지) -->
         </div><!-- /quote-card -->
+
+        <div class="egg-stage">
+          <div id="egg-shadow"></div>
+          <div id="egg-character">
+            <svg viewBox="0 0 38 46" width="38" height="46" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="19" cy="26" rx="17" ry="20" fill="#FFF8EE" stroke="#E8D5B5" stroke-width="1.2"/>
+              <ellipse class="egg-eye"   cx="13" cy="23" rx="2.2" ry="2.8" fill="#2C2C2C"/>
+              <ellipse cx="13.8" cy="22.2" rx="0.7" ry="0.9" fill="white" opacity="0.8"/>
+              <ellipse class="egg-eye-r" cx="25" cy="23" rx="2.2" ry="2.8" fill="#2C2C2C"/>
+              <ellipse cx="25.8" cy="22.2" rx="0.7" ry="0.9" fill="white" opacity="0.8"/>
+              <ellipse cx="9.5"  cy="28" rx="3.5" ry="2" fill="#FFB3B3" opacity="0.45"/>
+              <ellipse cx="28.5" cy="28" rx="3.5" ry="2" fill="#FFB3B3" opacity="0.45"/>
+              <path d="M14.5 31 Q19 35.5 23.5 31" stroke="#2C2C2C" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+              <ellipse cx="13" cy="12" rx="5" ry="3.5" fill="white" opacity="0.25" transform="rotate(-20, 13, 12)"/>
+            </svg>
+          </div>
+        </div>
 
         <!-- ── 하단 독 바 ── -->
         <div class="home-dock">
@@ -1942,6 +1945,7 @@ document.getElementById('login-id').addEventListener('keydown', e => {
 
 function doLogout() {
   stopCamera();
+  stopEggAnimation();
   currentUser = null;
   showScreen('login-screen');
 }
@@ -2234,60 +2238,54 @@ const egg = {
 function startEggAnimation() {
   if (eggAnimId) cancelAnimationFrame(eggAnimId);
 
-  const el = document.getElementById('egg-character');
+  const el     = document.getElementById('egg-character');
   const shadow = document.getElementById('egg-shadow');
-  if (!el || !shadow) return;
+  const stage  = document.querySelector('.egg-stage');
+  if (!el || !shadow || !stage) return;
 
-  const card = document.querySelector('.quote-card');
-  if (!card) return;
-
-  // 달걀은 quote-card 내부 position:absolute → card 기준
-  egg.x = 20;
-  egg.angle = 0;
-  egg.bounce = 0;
+  egg.x        = 20;
+  egg.angle    = 0;
+  egg.bounce   = 0;
   egg.bounceDir = 1;
+  egg.vx       = 1.4;
 
   function frame() {
-    const cardW = card.offsetWidth;
-    const maxX = cardW - egg.W - 16;
+    const stageW = stage.offsetWidth;
+    const maxX   = stageW - egg.W - 8;
+    const minX   = 8;
 
-    // 수평 이동
     egg.x += egg.vx * egg.dir;
 
-    // 벽 반사
+    // 벽 반사 + squish
     if (egg.x >= maxX) {
-      egg.x = maxX;
+      egg.x   = maxX;
       egg.dir = -1;
-      // 벽에 닿을 때 살짝 찌그러지는 느낌 (squish)
-      el.style.transform = `translateX(${egg.x}px) rotate(${egg.angle}deg) scaleX(1.25) scaleY(0.85)`;
+      el.style.transform = `translateX(${egg.x}px) rotate(${egg.angle}deg) scaleX(1.2) scaleY(0.85)`;
       shadow.style.transform = `translateX(${egg.x + egg.W/2 - 15}px) scaleX(1.3)`;
       eggAnimId = requestAnimationFrame(frame);
       return;
     }
-    if (egg.x <= 16) {
-      egg.x = 16;
+    if (egg.x <= minX) {
+      egg.x   = minX;
       egg.dir = 1;
-      el.style.transform = `translateX(${egg.x}px) rotate(${egg.angle}deg) scaleX(1.25) scaleY(0.85)`;
+      el.style.transform = `translateX(${egg.x}px) rotate(${egg.angle}deg) scaleX(1.2) scaleY(0.85)`;
       shadow.style.transform = `translateX(${egg.x + egg.W/2 - 15}px) scaleX(1.3)`;
       eggAnimId = requestAnimationFrame(frame);
       return;
     }
 
-    // 굴림 회전: 반지름 약 19px → circumference = 2π*19
-    // 1px 이동 = (360 / 2π*19)° 회전 ≈ 3.02°
+    // 굴림 회전 (r≈19 → 1px = 360/(2π·19) ≈ 3.02°)
     egg.angle += egg.dir * 3.0;
 
-    // 통통 위아래 (살짝)
+    // 통통 위아래
     egg.bounce += 0.09 * egg.bounceDir;
     if (egg.bounce >= 1) egg.bounceDir = -1;
-    if (egg.bounce <= 0) egg.bounceDir = 1;
-    const bounceY = Math.sin(egg.bounce * Math.PI) * 4; // 최대 4px 위아래
+    if (egg.bounce <= 0) egg.bounceDir =  1;
+    const bounceY    = Math.sin(egg.bounce * Math.PI) * 4;
+    const shadowSc   = 0.7 + (1 - bounceY / 8) * 0.4;
 
-    // 그림자 크기: 달걀 높이에 반비례
-    const shadowScale = 0.7 + (1 - bounceY / 8) * 0.4;
-
-    el.style.transform = `translateX(${egg.x}px) translateY(${-bounceY}px) rotate(${egg.angle}deg)`;
-    shadow.style.transform = `translateX(${egg.x + egg.W/2 - 15}px) scaleX(${shadowScale})`;
+    el.style.transform     = `translateX(${egg.x}px) translateY(${-bounceY}px) rotate(${egg.angle}deg)`;
+    shadow.style.transform = `translateX(${egg.x + egg.W/2 - 15}px) scaleX(${shadowSc.toFixed(3)})`;
 
     eggAnimId = requestAnimationFrame(frame);
   }
@@ -2303,6 +2301,7 @@ function stopEggAnimation() {
 }
 
 
+function getThisWeekDays() {
   const now = new Date();
   const mon = new Date(now);
   const dow = now.getDay() === 0 ? 6 : now.getDay() - 1;
