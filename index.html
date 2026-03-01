@@ -99,7 +99,8 @@
     position: absolute;     /* #app 안에서 절대 고정 */
     inset: 0;               /* 화면 전체 덮기 */
     overflow: hidden;
-    background: var(--warm-gray);
+    /* PC에서 앱 양옆도 파란 그라데이션으로 채움 */
+    background: linear-gradient(170deg, var(--green-700) 0%, var(--green-600) 60%, var(--green-500) 100%);
   }
   .screen.active { display: flex; z-index: 1; }
 
@@ -173,7 +174,7 @@
   }
   /* ─── MAIN SCREEN: screen 절대위치 상속 ─── */
   #main-screen {
-    background: var(--warm-gray);
+    /* screen의 파란 그라데이션 배경 유지 */
   }
 
   /* ─── HOME: 명언 카드 + 독 바 스타일 ─── */
@@ -1110,6 +1111,7 @@
   /* ─── RESPONSIVE ─── */
   @media (min-width: 640px) {
     .content { max-width: 640px; margin: 0 auto; }
+    .content.home-active { max-width: none; margin: 0; }
     .topbar { max-width: 640px; margin: 0 auto; }
     .bottom-nav { max-width: 640px; margin: 0 auto; left: 50%; transform: translateX(-50%); }
   }
@@ -1118,6 +1120,8 @@
   /* 모든 탭 패널: flex 컨테이너를 꽉 채우도록 */
   .tab-panel {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
@@ -1936,8 +1940,8 @@ function switchTab(tab) {
   currentTab = tab;
   const panel = document.getElementById('tab-' + tab);
   if (panel) {
-    // 홈 탭은 flex 레이아웃 (독 바 구조), 나머지는 block
-    panel.style.display = (tab === 'home') ? 'flex' : 'block';
+    panel.style.display = 'flex';
+    panel.style.flexDirection = 'column';
     panel.classList.add('fade-in');
   }
   const navBtn = document.getElementById('nav-' + tab);
