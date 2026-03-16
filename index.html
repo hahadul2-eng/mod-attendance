@@ -781,7 +781,6 @@
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.55);
     z-index: 200; display: none; align-items: flex-end;
-    backdrop-filter: blur(2px);
   }
   .modal-overlay.open { display: flex; }
   .modal {
@@ -3669,6 +3668,7 @@ function renderSchedule() {
 }
 
 function closeAppGrid() {
+  const overlay = document.getElementById('modal-appgrid');
   const sheet   = document.getElementById('app-grid-sheet');
   if (!sheet) return;
   sheet.classList.remove('open');
