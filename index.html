@@ -3427,8 +3427,15 @@ function closeAppGrid() {
   const overlay = document.getElementById('modal-appgrid');
   const sheet   = document.getElementById('app-grid-sheet');
   if (!sheet) return;
+  // 배경 blur 즉시 제거 (탭 전환 시 뿌옇게 보이는 현상 방지)
+  if (overlay) overlay.style.backdropFilter = 'none';
   sheet.classList.remove('open');
-  setTimeout(() => { if (overlay) overlay.style.display = 'none'; }, 320);
+  setTimeout(() => {
+    if (overlay) {
+      overlay.style.display = 'none';
+      overlay.style.backdropFilter = '';
+    }
+  }, 320);
 }
 
 // ──────────────────────────────────────────────
