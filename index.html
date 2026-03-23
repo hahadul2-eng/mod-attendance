@@ -781,6 +781,7 @@
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.55);
     z-index: 200; display: none; align-items: flex-end;
+    backdrop-filter: blur(2px);
   }
   .modal-overlay.open { display: flex; }
   .modal {
@@ -1168,40 +1169,28 @@
   /* ─── 스케쥴 탭 ─── */
   #tab-schedule { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); background: var(--warm-gray); }
   .sch-header {
-    display: flex; align-items: center;
-    padding: 10px 12px 10px 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px 10px;
     background: var(--white);
     border-bottom: 1px solid var(--green-100);
     position: sticky; top: 0; z-index: 10;
   }
-  /* 이름 열(64px)에 맞춰 nav 버튼 영역 고정 */
-  .sch-nav-row {
-    display: flex; align-items: center; justify-content: center;
-    gap: 4px;
-    min-width: 64px; width: 64px;
-    flex-shrink: 0;
-    border-right: 1px solid var(--green-100);
-    padding: 0 4px;
-  }
-  .sch-header-right {
-    display: flex; align-items: center; justify-content: space-between;
-    flex: 1; padding-left: 12px;
-  }
   .sch-week-label {
-    font-size: 14px; font-weight: 600; color: var(--text-dark);
+    font-size: 15px; font-weight: 600; color: var(--text-dark);
     letter-spacing: -0.3px;
   }
   .sch-nav-btn {
-    background: var(--green-50); border: none; border-radius: 6px;
-    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--green-600); flex-shrink: 0;
+    background: var(--green-50); border: none; border-radius: 8px;
+    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--green-600);
   }
   .sch-nav-btn:active { background: var(--green-100); }
   .sch-today-btn {
     background: var(--green-600); border: none; border-radius: 8px;
-    padding: 6px 12px; font-size: 12px; font-weight: 500;
-    color: #fff; cursor: pointer; letter-spacing: -0.2px; flex-shrink: 0;
+    padding: 6px 14px; font-size: 12px; font-weight: 500;
+    color: #fff; cursor: pointer; letter-spacing: -0.2px;
   }
+  .sch-nav-row { display: flex; align-items: center; gap: 8px; }
   .sch-table-wrap {
     overflow-x: auto; -webkit-overflow-scrolling: touch;
     padding: 12px 0 8px;
@@ -1313,7 +1302,17 @@
     <!-- Topbar -->
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.5px;">MOD</span>
+        <svg viewBox="0 0 240 110" xmlns="http://www.w3.org/2000/svg" width="50" height="23">
+          <rect width="240" height="110" rx="18" fill="rgba(255,255,255,0.2)"/>
+          <text x="120" y="82"
+            font-family="'Paperlogic4', 'Noto Sans KR', sans-serif"
+            font-size="80"
+            font-weight="700"
+            fill="white"
+            text-anchor="middle"
+            letter-spacing="-2"
+          >MOD</text>
+        </svg>
         <div class="topbar-title" id="topbar-title" style="font-size:14px;opacity:0.85">홈</div>
       </div>
       <div class="topbar-right">
@@ -1614,20 +1613,16 @@
       <div id="tab-schedule" class="tab-panel fade-in" style="display:none">
         <!-- 헤더: 주 이동 -->
         <div class="sch-header">
-          <!-- 이름 열(64px)과 폭 일치: ◀ ▶ 버튼 -->
           <div class="sch-nav-row">
             <button class="sch-nav-btn" onclick="scheduleWeekOffset--; renderSchedule()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
             <button class="sch-nav-btn" onclick="scheduleWeekOffset++; renderSchedule()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
-          </div>
-          <!-- 날짜 영역: 주 레이블 + 이번 주 버튼 -->
-          <div class="sch-header-right">
             <div class="sch-week-label" id="sch-week-label">—</div>
-            <button class="sch-today-btn" onclick="scheduleWeekOffset=0; renderSchedule()">이번 주</button>
           </div>
+          <button class="sch-today-btn" onclick="scheduleWeekOffset=0; renderSchedule()">이번 주</button>
         </div>
         <!-- 범례 -->
         <div class="sch-legend">
@@ -2425,18 +2420,34 @@ function renderHistory() {
 // ──────────────────────────────────────────────
 function renderVacation() {
   const reqs = getData('requests', []).filter(r => r.uid === currentUser.id);
-  const vacUsed = reqs.filter(r => r.type==='vacation' && (r.status==='approved' || r.status==='cancel_requested')).reduce((sum,r) => {
+  const leaveSettings = getData('leave_settings', {});
+  const annuals = getData('annual_overrides', {});
+  const ls = leaveSettings[currentUser.id] || {};
+
+  // 연차 총일수: leave_settings > annual_overrides > 기본 15
+  const annualTotal = ls.annualTotal !== undefined ? ls.annualTotal
+                    : (annuals[currentUser.id] !== undefined ? annuals[currentUser.id] : 15);
+
+  // 앱 신청으로 승인된 사용분
+  const appApproved = reqs.filter(r => r.type==='vacation' && (r.status==='approved' || r.status==='cancel_requested')).reduce((sum,r) => {
+    if (!r.vacType) return sum + 1;
     if (r.vacType.startsWith('half')) return sum + 0.5;
     const s = new Date(r.start), e = new Date(r.end);
     return sum + Math.round((e-s)/(86400000))+1;
   }, 0);
+
+  // 합산: 엑셀 기준 사용분 + 앱 신청 사용분
+  const excelUsed = ls.annualUsed !== undefined ? ls.annualUsed : 0;
+  const vacUsed = excelUsed + appApproved;
+  const vacLeft = Math.max(0, annualTotal - vacUsed);
+
   const tripCount = reqs.filter(r => r.type==='trip' && (r.status==='approved' || r.status==='cancel_requested')).length;
 
   const vb = document.getElementById('vac-balance');
   vb.innerHTML = `
-    <div class="vac-bal-card"><div class="vac-bal-num">15</div><div class="vac-bal-label">연차 총 일수</div></div>
+    <div class="vac-bal-card"><div class="vac-bal-num">${annualTotal}</div><div class="vac-bal-label">연차 총 일수</div></div>
     <div class="vac-bal-card"><div class="vac-bal-num" style="color:var(--orange)">${vacUsed}</div><div class="vac-bal-label">사용 일수</div></div>
-    <div class="vac-bal-card"><div class="vac-bal-num">${15-vacUsed}</div><div class="vac-bal-label">잔여 일수</div></div>`;
+    <div class="vac-bal-card"><div class="vac-bal-num">${vacLeft}</div><div class="vac-bal-label">잔여 일수</div></div>`;
 
   const list = document.getElementById('vac-trip-list');
   if (reqs.length === 0) {
@@ -2728,7 +2739,7 @@ function renderAdminEmp() {
       const s = new Date(r.start), e = new Date(r.end);
       return sum + Math.round((e - s) / 86400000) + 1;
     }, 0);
-    const annualUsed = ls.annualUsed !== undefined ? ls.annualUsed : vacUsedFromApp;
+    const annualUsed = (ls.annualUsed !== undefined ? ls.annualUsed : 0) + vacUsedFromApp;
     const annualLeft = Math.max(0, annualTotal - annualUsed);
 
     // 출장
@@ -3668,7 +3679,6 @@ function renderSchedule() {
 }
 
 function closeAppGrid() {
-  const overlay = document.getElementById('modal-appgrid');
   const sheet   = document.getElementById('app-grid-sheet');
   if (!sheet) return;
   sheet.classList.remove('open');
