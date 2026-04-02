@@ -290,7 +290,7 @@
 
   /* 날짜 + 출근 기록 영역 */
   .qc-footer {
-    padding: 0 32px 28px;
+    padding: 0 32px 164px;
     position: relative; z-index: 2;
   }
   .qc-date {
@@ -311,6 +311,104 @@
   }
   .qc-record-label { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.3px; }
   .qc-record-val   { font-size: 13px; color: rgba(255,255,255,0.85); }
+
+  .home-recent-panel {
+    position: absolute;
+    left: 24px;
+    right: 24px;
+    bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+    z-index: 12;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 22px;
+    padding: 14px 14px 10px;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 18px 40px rgba(5, 14, 38, 0.16);
+  }
+  .home-recent-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .home-recent-title {
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 0.8px;
+  }
+  .home-recent-link {
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,0.72);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .home-recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .home-recent-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.14);
+  }
+  .home-recent-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.18);
+    color: white;
+  }
+  .home-recent-icon svg { width: 20px; height: 20px; }
+  .home-recent-copy { flex: 1; min-width: 0; }
+  .home-recent-copy strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 400;
+    color: white;
+    letter-spacing: -0.2px;
+  }
+  .home-recent-copy span {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.62);
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .home-recent-status {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    color: white;
+    background: rgba(255,255,255,0.14);
+  }
+  .home-recent-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 14px 14px;
+    color: rgba(255,255,255,0.7);
+    text-align: center;
+  }
+  .home-recent-empty p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.62);
+  }
 
   /* ── 하단 독 바 (참고 이미지 하단 흰색 바) ── */
   .home-dock {
@@ -715,6 +813,36 @@
     background: var(--green-100); color: var(--green-600);
     padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 300;
     margin-top: 12px;
+  }
+  .qr-office-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .qr-office-card {
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 18px 14px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .qr-office-card h4 {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--green-800);
+    margin-bottom: 6px;
+  }
+  .qr-office-card p {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 14px;
+  }
+  .qr-office-canvas {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* ─── ATTENDANCE HISTORY ─── */
@@ -1136,6 +1264,18 @@
   .dock-icon-btn { width: 48px; }
 
   /* ─── RESPONSIVE ─── */
+  @media (max-width: 420px) {
+    .home-recent-panel {
+      left: 16px;
+      right: 16px;
+      bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+      padding: 12px 12px 8px;
+    }
+    .qc-footer { padding: 0 24px 160px; }
+    .home-dock { padding-left: 16px; padding-right: 16px; }
+    .dock-icon-btn { width: 44px; height: 52px; }
+    .qr-office-grid { grid-template-columns: 1fr; }
+  }
   @media (min-width: 640px) {
     .content { max-width: 640px; margin: 0 auto; }
     .content.home-active { max-width: none; margin: 0; }
@@ -1360,6 +1500,14 @@
             </div>
           </div>
 
+          <div class="home-recent-panel">
+            <div class="home-recent-head">
+              <div class="home-recent-title">최근 신청 현황</div>
+              <button class="home-recent-link" onclick="switchTab('vacation')">전체 보기</button>
+            </div>
+            <div class="home-recent-list" id="recent-list"></div>
+          </div>
+
         </div><!-- /quote-card -->
 
         <!-- ── 하단 독 바 ── -->
@@ -1450,6 +1598,19 @@
             <div style="margin-top:12px; text-align:center;">
               <button class="btn-secondary" onclick="startCamera()" style="margin:4px">📷 카메라 시작</button>
               <button class="btn-secondary" onclick="stopCamera()" style="margin:4px">⏹ 카메라 종료</button>
+            </div>
+          </div>
+
+          <div class="qr-office-grid">
+            <div class="qr-office-card">
+              <h4>포천 본사 QR</h4>
+              <p>고정 출입용 QR 코드</p>
+              <div class="qr-office-canvas" id="qr-canvas-container"></div>
+            </div>
+            <div class="qr-office-card">
+              <h4>안양 지사 QR</h4>
+              <p>지사용 출퇴근 QR 코드</p>
+              <div class="qr-office-canvas" id="qr-canvas-container2"></div>
             </div>
           </div>
 
@@ -2120,10 +2281,6 @@ function startClock() {
     const h = String(now.getHours()).padStart(2,'0');
     const m = String(now.getMinutes()).padStart(2,'0');
     const s = String(now.getSeconds()).padStart(2,'0');
-    const hm = document.getElementById('clock-hm');
-    const sec = document.getElementById('clock-sec');
-    if (hm) hm.textContent = `${h}:${m}`;
-    if (sec) sec.textContent = `:${s}`;
     // 독 바 시간 업데이트
     const dockTime = document.getElementById('dock-clock-time');
     if (dockTime) dockTime.textContent = `${h}:${m}:${s}`;
@@ -2246,8 +2403,6 @@ const QUOTES = [
 function renderHome() {
   const now = new Date();
   const days = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
-  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-
   // 날짜 표시 (레퍼런스 이미지 스타일: MONDAY 28 · 2026)
   const qd = document.getElementById('qc-date');
   if (qd) qd.textContent = `${days[now.getDay()].toUpperCase()}  ${now.getDate()} · ${now.getFullYear()}`;
@@ -2293,14 +2448,17 @@ function renderHome() {
         const isVac = r.type === 'vacation';
         const ss = statusStyle[r.status] || statusStyle.pending;
         const sl = statusLabel[r.status] || '대기';
-        const dateStr = r.startDate + (r.endDate && r.endDate !== r.startDate ? ' ~ ' + r.endDate : '');
-        return `<div style="display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--green-100);">
-          <div style="width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--green-50);color:var(--green-600)">${isVac ? vacSVG : tripSVG}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;color:var(--text-dark);letter-spacing:-0.2px">${isVac?'휴가 신청':'출장 신청'}</div>
-            <div style="font-size:11px;color:var(--text-light);margin-top:2px">${dateStr}${r.reason?' · '+r.reason:''}</div>
+        const dateStr = isVac
+          ? `${r.start}${r.end && r.end !== r.start ? ' ~ ' + r.end : ''}`
+          : (r.date || '일정 미정');
+        const detailStr = isVac ? (r.reason || '사유 미입력') : (r.dest || r.purpose || '출장 정보 미입력');
+        return `<div class="home-recent-item">
+          <div class="home-recent-icon">${isVac ? vacSVG : tripSVG}</div>
+          <div class="home-recent-copy">
+            <strong>${isVac ? '휴가 신청' : '출장 신청'}</strong>
+            <span>${dateStr} · ${detailStr}</span>
           </div>
-          <div style="font-size:11px;padding:4px 10px;border-radius:20px;flex-shrink:0;${ss}">${sl}</div>
+          <div class="home-recent-status" style="${ss}">${sl}</div>
         </div>`;
       }).join('');
     }
