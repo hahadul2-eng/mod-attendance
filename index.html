@@ -81,6 +81,9 @@
     width: 100%;
     top: 0; left: 0;
   }
+  body.home-mode {
+    background: linear-gradient(170deg, var(--green-700) 0%, var(--green-600) 60%, var(--green-500) 100%);
+  }
   .brand-mod { font-weight: 700 !important; }
   /* ─── APP SHELL ─── */
   #app {
@@ -92,6 +95,9 @@
     height: 100vh;
     height: 100dvh;
     height: -webkit-fill-available;
+  }
+  #app.home-mode {
+    background: linear-gradient(170deg, var(--green-700) 0%, var(--green-600) 60%, var(--green-500) 100%);
   }
   .screen {
     display: none;
@@ -2252,6 +2258,8 @@ function showScreen(id) {
   // 로그인 화면: 바텀 네비 숨기기
   if (id === 'login-screen') {
     document.body.classList.add('login-mode');
+    document.body.classList.remove('home-mode');
+    document.getElementById('app')?.classList.remove('home-mode');
   } else {
     document.body.classList.remove('login-mode');
   }
@@ -2292,6 +2300,8 @@ function switchTab(tab) {
     if (tab === 'home') mainScreen.classList.add('home-bg');
     else mainScreen.classList.remove('home-bg');
   }
+  document.body.classList.toggle('home-mode', tab === 'home');
+  document.getElementById('app')?.classList.toggle('home-mode', tab === 'home');
   // 홈 탭: 상단 topbar + 하단 nav 숨김 (독 바가 대신)
   const topbar = document.querySelector('.topbar');
   const bottomNav = document.querySelector('.bottom-nav');
