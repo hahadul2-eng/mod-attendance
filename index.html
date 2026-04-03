@@ -2267,7 +2267,11 @@ function switchTab(tab) {
   if (tab === 'admin') renderAdmin();
   if (tab === 'approve') renderApprove();
   if (tab === 'qrmanage') renderQrManage();
-  if (tab === 'qr') { generateOfficeQR(); }
+  if (tab === 'qr') {
+    generateOfficeQR();
+    // 탭 전환은 사용자 제스처에 가깝기 때문에 이 시점에 자동 카메라 시작을 시도한다.
+    requestAnimationFrame(() => startCamera({ silent: true, auto: true }));
+  }
   if (tab === 'profile') renderProfile();
   if (tab === 'schedule') renderSchedule();
 }
@@ -4019,8 +4023,12 @@ function generateOfficeQR() {
   renderQrToContainer(document.getElementById('qr-canvas-container2'), qrCodes.anyang);
 }
 
-async function startCamera() {
-  if (stream) { showToast('카메라가 이미 작동 중입니다'); return; }
+async function startCamera(options = {}) {
+  const { silent = false, auto = false } = options;
+  if (stream) {
+    if (!silent) showToast('카메라가 이미 작동 중입니다');
+    return;
+  }
   const resDiv = document.getElementById('scan-result');
   if (!resDiv) return;
   resDiv.classList.remove('show');
@@ -4030,9 +4038,10 @@ async function startCamera() {
     video.srcObject = stream;
     scanning = true;
     scanInterval = setInterval(() => scanQRFrame(video), 300);
-    showToast('📷 카메라 시작됨');
+    if (!silent) showToast('📷 카메라 시작됨');
   } catch(e) {
-    showToast('카메라 접근 권한이 필요합니다', 'error');
+    if (auto) showToast('자동 시작이 제한되었습니다. 카메라 시작 버튼을 눌러주세요', 'error');
+    else showToast('카메라 접근 권한이 필요합니다', 'error');
   }
 }
 
