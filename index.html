@@ -197,14 +197,14 @@
     height: 100%;
     overflow: hidden;
     padding: 0;
-    background: var(--green-800);
+    background: linear-gradient(170deg, var(--green-700) 0%, var(--green-600) 60%, var(--green-500) 100%);
     position: relative;
   }
 
   /* 메인 카드 - 화면 가득 */
   .quote-card {
     flex: 1;
-    background: linear-gradient(170deg, var(--green-700) 0%, var(--green-600) 60%, var(--green-500) 100%);
+    background: transparent;
     display: flex;
     flex-direction: column;
     padding: 0 0 0 0;
@@ -440,6 +440,7 @@
     flex-direction: column;
     justify-content: center;
     gap: 2px;
+    padding-left: 10px;
   }
   .dock-clock-main {
     display: none;
