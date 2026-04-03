@@ -33,13 +33,13 @@
 <style>
   :root {
     /* Monochromatic: 단일 색조 #1A3DA6 기준, 채도·명도 변화만 */
-    --green-900: #102b68;   /* Midnight Navy blue */
-    --green-800: #18428f;   /* Deep blue */
-    --green-700: #1266d4;   /* Primary blue */
-    --green-600: #1a86ff;   /* Main brand blue */
-    --green-500: #47a8ff;   /* Bright blue */
-    --green-400: #8dc2ff;   /* Ice Blue */
-    --green-300: #dcecff;   /* Ice Blue tint */
+    --green-900: #0d2458;   /* Midnight Navy blue */
+    --green-800: #143775;   /* Deep blue */
+    --green-700: #1158b8;   /* Primary blue */
+    --green-600: #1679ee;   /* Main brand blue */
+    --green-500: #3a97f5;   /* Bright blue */
+    --green-400: #7fb8ff;   /* Ice Blue */
+    --green-300: #d7e9ff;   /* Ice Blue tint */
     --green-200: #f2f5fa;   /* Crystal Grey */
     --green-100: #f6f8fc;   /* Soft grey */
     --green-50:  #fbfcfe;   /* Surface */
@@ -129,6 +129,14 @@
   .topbar-title { font-size: 16px; letter-spacing: -0.35px; }
   .topbar-sub { font-size: 11px; opacity: 0.65; margin-top: 1px; }
   .topbar-right { display: flex; gap: 10px; align-items: center; }
+  .brand-wordmark {
+    font-family: 'Paperlogic4', 'Noto Sans KR', sans-serif;
+    font-size: 34px;
+    line-height: 1;
+    color: white;
+    letter-spacing: -1px;
+    transform: translateY(1px);
+  }
   .icon-btn {
     background: rgba(255,255,255,0.12);
     border: none; cursor: pointer;
@@ -1444,17 +1452,7 @@
     <!-- Topbar -->
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:10px;">
-        <svg viewBox="0 0 240 110" xmlns="http://www.w3.org/2000/svg" width="50" height="23">
-          <rect width="240" height="110" rx="18" fill="rgba(255,255,255,0.2)"/>
-          <text x="120" y="82"
-            font-family="'Paperlogic4', 'Noto Sans KR', sans-serif"
-            font-size="80"
-            font-weight="700"
-            fill="white"
-            text-anchor="middle"
-            letter-spacing="-2"
-          >MOD</text>
-        </svg>
+        <div class="brand-wordmark">MOD</div>
         <div class="topbar-title" id="topbar-title" style="font-size:14px;opacity:0.85">홈</div>
       </div>
       <div class="topbar-right">
