@@ -942,8 +942,9 @@
 
   /* ─── ADMIN ─── */
   .admin-tabs {
-    display: flex; padding: 12px 16px 0; gap: 6px;
+    display: flex; padding: 12px 24px 0; gap: 8px;
     flex-wrap: wrap;
+    justify-content: center;
   }
   .admin-tab {
     padding: 6px 11px; border: none; background: white; border-radius: 20px;
@@ -953,7 +954,7 @@
     white-space: nowrap;
   }
   .admin-tab.active { background: var(--green-700); color: white; }
-  .admin-content { padding: 12px 16px; }
+  .admin-content { padding: 12px 0; }
   .admin-stat-grid {
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px;
   }
