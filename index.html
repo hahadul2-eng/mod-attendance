@@ -32,29 +32,29 @@
 <style>
   :root {
     /* Monochromatic: 단일 색조 #1A3DA6 기준, 채도·명도 변화만 */
-    --green-900: #040D24;   /* 극암 */
-    --green-800: #0A1E4F;   /* 암 */
-    --green-700: #112869;   /* 진한 */
-    --green-600: #1A3DA6;   /* 기준색 */
-    --green-500: #2850C8;   /* 밝음 */
-    --green-400: #4C72E0;   /* 더 밝음 */
-    --green-300: #7D9FEE;   /* 연함 */
-    --green-200: #B3C8F8;   /* 페일 */
-    --green-100: #D6E3FC;   /* 매우 연함 */
-    --green-50:  #EEF3FF;   /* 배경조 */
-    --cream:     #F5F7FF;
-    --warm-gray: #F0F2FA;   /* 메인 배경 */
-    --text-dark: #0A1E4F;
-    --text-mid:  #4a5568;
-    --text-light:#8fa3b1;
+    --green-900: #0b2a5e;   /* 극암 */
+    --green-800: #16458f;   /* 암 */
+    --green-700: #1f66c9;   /* 진한 */
+    --green-600: #2f86eb;   /* 기준색 */
+    --green-500: #53a8ff;   /* 밝음 */
+    --green-400: #7bc3ff;   /* 더 밝음 */
+    --green-300: #a7dbff;   /* 연함 */
+    --green-200: #cfeaff;   /* 페일 */
+    --green-100: #e3f2ff;   /* 매우 연함 */
+    --green-50:  #f1f8ff;   /* 배경조 */
+    --cream:     #f6fbff;
+    --warm-gray: #edf5ff;   /* 메인 배경 */
+    --text-dark: #133b79;
+    --text-mid:  #607fa4;
+    --text-light:#9db5cf;
     --white:     #ffffff;
-    --orange:    #2850C8;   /* 보색 최소화: 파란색 계열로 대체 */
-    --blue:      #1A3DA6;
+    --orange:    #53a8ff;   /* 보색 최소화: 파란색 계열로 대체 */
+    --blue:      #2f86eb;
     --red:       var(--green-800);   /* 오류만 사용 */
-    --success:   #1A3DA6;   /* 보색 제거, 동일 계열 */
-    --shadow-sm: 0 2px 8px rgba(10,30,79,0.08);
-    --shadow-md: 0 6px 20px rgba(10,30,79,0.12);
-    --shadow-lg: 0 12px 40px rgba(10,30,79,0.16);
+    --success:   #2f86eb;   /* 보색 제거, 동일 계열 */
+    --shadow-sm: 0 2px 10px rgba(22,69,143,0.08);
+    --shadow-md: 0 8px 24px rgba(22,69,143,0.12);
+    --shadow-lg: 0 16px 44px rgba(22,69,143,0.16);
     --radius-sm: 10px;
     --radius-md: 16px;
     --radius-lg: 22px;
@@ -70,6 +70,7 @@
   body {
     font-family: 'Noto Sans KR', sans-serif;
     font-weight: 300;
+    letter-spacing: -0.22px;
     background: var(--warm-gray);
     color: var(--text-dark);
     height: 100%;
@@ -124,7 +125,7 @@
     position: sticky; top: 0; z-index: 100;
     flex-shrink: 0;
   }
-  .topbar-title { font-size: 16px; letter-spacing: -0.2px; }
+  .topbar-title { font-size: 16px; letter-spacing: -0.35px; }
   .topbar-sub { font-size: 11px; opacity: 0.65; margin-top: 1px; }
   .topbar-right { display: flex; gap: 10px; align-items: center; }
   .icon-btn {
@@ -161,7 +162,7 @@
   .nav-btn .nav-icon { width: 24px; height: 24px; display:flex; align-items:center; justify-content:center; }
   .nav-btn .nav-icon svg { width: 22px; height: 22px; transition: transform 0.2s; }
   .nav-btn.active .nav-icon svg { transform: scale(1.1); }
-  .nav-btn .nav-label { font-size: 10px; letter-spacing: -0.2px; }
+  .nav-btn .nav-label { font-size: 10px; letter-spacing: -0.35px; }
   .nav-btn.active .nav-label { color: var(--green-500); }
 
   /* ─── CONTENT AREA ─── */
@@ -230,7 +231,7 @@
   .qc-user-name {
     font-size: 13px;
     color: rgba(255,255,255,0.65);
-    letter-spacing: 0.2px;
+    letter-spacing: -0.1px;
   }
   .qc-status-badge {
     padding: 5px 14px;
@@ -276,7 +277,7 @@
     margin-top: 20px;
     font-size: 12px;
     color: rgba(255,255,255,0.5);
-    letter-spacing: 0.3px;
+    letter-spacing: -0.05px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -296,7 +297,7 @@
   .qc-date {
     font-size: 11px;
     color: rgba(255,255,255,0.45);
-    letter-spacing: 1.5px;
+    letter-spacing: 0.7px;
     text-transform: uppercase;
     margin-bottom: 10px;
   }
@@ -309,7 +310,7 @@
     flex-direction: column;
     gap: 2px;
   }
-  .qc-record-label { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.3px; }
+  .qc-record-label { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0; }
   .qc-record-val   { font-size: 13px; color: rgba(255,255,255,0.85); }
 
   .home-recent-panel {
@@ -334,7 +335,7 @@
   .home-recent-title {
     font-size: 11px;
     color: rgba(255,255,255,0.75);
-    letter-spacing: 0.8px;
+    letter-spacing: 0.2px;
   }
   .home-recent-link {
     border: none;
@@ -375,7 +376,7 @@
     font-size: 13px;
     font-weight: 400;
     color: white;
-    letter-spacing: -0.2px;
+    letter-spacing: -0.3px;
   }
   .home-recent-copy span {
     display: block;
@@ -442,14 +443,14 @@
     font-size: 13px;
     color: var(--green-800);
     font-weight: 400;
-    letter-spacing: 0.2px;
+    letter-spacing: -0.1px;
     white-space: nowrap;
   }
   .dock-clock-time {
     font-size: 13px;
     color: var(--green-700);
     font-weight: 300;
-    letter-spacing: 0.2px;
+    letter-spacing: -0.1px;
     white-space: nowrap;
   }
 
@@ -542,7 +543,7 @@
     font-size: 34px; backdrop-filter: blur(4px);
     border: 1px solid rgba(255,255,255,0.2);
   }
-  .login-logo h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.5px; }
+  .login-logo h1 { font-size: 24px; font-weight: 300; letter-spacing: -0.8px; }
   .login-logo p { font-size: 13px; opacity: 0.65; margin-top: 4px; }
   .login-card {
     background: white; border-radius: var(--radius-xl);
@@ -553,7 +554,7 @@
   .login-card h2 { font-size: 20px; font-weight: 300; margin-bottom: 6px; color: var(--green-800); }
   .login-card p { font-size: 13px; color: var(--text-light); margin-bottom: 28px; }
   .form-group { margin-bottom: 16px; }
-  .form-group label { display:block; font-size: 12px; font-weight: 300; color: var(--text-mid); margin-bottom: 6px; letter-spacing: 0.3px; text-transform: uppercase; }
+  .form-group label { display:block; font-size: 12px; font-weight: 300; color: var(--text-mid); margin-bottom: 6px; letter-spacing: 0.05px; text-transform: uppercase; }
   .form-group input, .form-group select, .form-group textarea {
     width: 100%; padding: 13px 16px;
     border: 1.5px solid var(--green-100); border-radius: var(--radius-sm);
@@ -616,7 +617,7 @@
   }
   .dash-hero-top { display: flex; justify-content: space-between; align-items: flex-start; }
   .dash-greeting { font-size: 13px; opacity: 0.75; }
-  .dash-name { font-size: 22px; font-weight: 300; margin-top: 2px; letter-spacing: -0.5px; }
+  .dash-name { font-size: 22px; font-weight: 300; margin-top: 2px; letter-spacing: -0.8px; }
   .dash-date { font-size: 12px; opacity: 0.6; margin-top: 4px; }
   .dash-status-badge {
     padding: 6px 14px; border-radius: 20px;
@@ -632,7 +633,7 @@
     margin: -20px 16px 0; position: relative; z-index: 2;
     box-shadow: var(--shadow-md); padding: 24px;
   }
-  .clock-label { font-size: 11px; font-weight: 300; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+  .clock-label { font-size: 11px; font-weight: 300; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.1px; }
   .clock-time { font-size: 44px; font-weight: 300; color: var(--green-800); letter-spacing: -2px; margin: 4px 0; }
   .clock-seconds { font-size: 28px; color: var(--green-400); }
   .clock-actions { display: flex; gap: 10px; margin-top: 16px; }
@@ -663,7 +664,7 @@
     display: flex; justify-content: space-between; align-items: center;
     padding: 20px 20px 12px;
   }
-  .section-title { font-size: 14px; font-weight: 300; color: var(--text-dark); letter-spacing: -0.2px; }
+  .section-title { font-size: 14px; font-weight: 300; color: var(--text-dark); letter-spacing: -0.35px; }
   .section-more { font-size: 13px; color: var(--green-400); font-weight: 300; cursor: pointer; }
 
   /* ─── QUICK ACTIONS ─── */
@@ -696,7 +697,7 @@
     margin: 0 16px 12px; padding: 18px;
     box-shadow: var(--shadow-sm);
   }
-  .card-title { font-size: 14px; font-weight: 300; color: var(--text-dark); margin-bottom: 12px; letter-spacing: -0.2px; }
+  .card-title { font-size: 14px; font-weight: 300; color: var(--text-dark); margin-bottom: 12px; letter-spacing: -0.35px; }
 
   /* ─── LIST ITEMS ─── */
   .list-item {
@@ -1011,7 +1012,7 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 36px; border: 3px solid rgba(255,255,255,0.3);
   }
-  .profile-name { font-size: 22px; font-weight: 300; }
+  .profile-name { font-size: 22px; font-weight: 300; letter-spacing: -0.7px; }
   .profile-dept { font-size: 14px; opacity: 0.7; margin-top: 4px; }
   .profile-role { display: inline-block; margin-top: 8px; padding: 4px 14px; background: rgba(255,255,255,0.15); border-radius: 20px; font-size: 12px; }
   .profile-list { margin: -20px 16px 0; background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
@@ -1090,7 +1091,7 @@
     font-size: 13px;
     font-weight: 500;
     color: var(--green-800);
-    letter-spacing: -0.2px;
+    letter-spacing: -0.35px;
   }
   .mgmt-month-nav {
     display: flex;
