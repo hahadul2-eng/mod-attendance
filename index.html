@@ -3620,6 +3620,7 @@ function approveReq(id, status) {
   showToast(status === 'approved' ? '✅ 승인 처리되었습니다' : '❌ 반려 처리되었습니다', status === 'approved' ? 'success' : 'error');
   updateApproveBadge();
   updateAdminApproveBadge();
+  updateDockBellBadge();
   if (isLeader(currentUser)) renderApprove();
   else { renderAdminApprovePanel(); updateAdminApproveBadge(); }
 }
@@ -3659,6 +3660,7 @@ function approveCancel(id, doCancel) {
   }
   setData('requests', reqs);
   updateApproveBadge();
+  updateAdminApproveBadge();
   updateDockBellBadge();
   if (isLeader(currentUser)) renderApprove();
   else { renderAdminApprovePanel(); updateAdminApproveBadge(); }
@@ -3838,8 +3840,16 @@ function openAppGrid() {
     });
   }
 
+  // 로그아웃 추가 (항상 마지막)
+  menus.push({
+    label: '로그아웃',
+    action: 'logout',
+    bg: 'linear-gradient(135deg,#8fa3b1,#b0bec5)',
+    svg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
+  });
+
   grid.innerHTML = menus.map(m => `
-    <div class="app-grid-item" onclick="closeAppGrid();switchTab('${m.tab}')">
+    <div class="app-grid-item" onclick="closeAppGrid();${m.action === 'logout' ? 'setTimeout(doLogout,150)' : `setTimeout(()=>switchTab('${m.tab}'),150)`}">
       <div class="app-grid-icon" style="background:${m.bg}">${m.svg}</div>
       <div class="app-grid-label">${m.label}</div>
     </div>`).join('');
@@ -4270,6 +4280,9 @@ function submitVacation() {
   closeModal('modal-vacation');
   document.getElementById('vac-reason').value = '';
   showToast('휴가 신청이 완료되었습니다', 'success');
+  updateApproveBadge();
+  updateAdminApproveBadge();
+  updateDockBellBadge();
   if (currentTab === 'vacation') renderVacation();
   if (currentTab === 'home') renderHome();
 }
@@ -4297,6 +4310,9 @@ function submitTrip() {
   document.getElementById('trip-client').value = '';
   document.getElementById('trip-purpose').value = '';
   showToast('출장 신청이 완료되었습니다', 'success');
+  updateApproveBadge();
+  updateAdminApproveBadge();
+  updateDockBellBadge();
   if (currentTab === 'vacation') renderVacation();
   if (currentTab === 'home') renderHome();
 }
