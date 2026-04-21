@@ -1882,7 +1882,7 @@
       </button>
       <!-- QR관리 탭: 관리 탭 하위 메뉴로 이동 -->
       <!-- 관리 탭: CEO + 관리부 전용 -->
-      <button class="nav-btn" id="nav-admin" style="display:none" onclick="switchTab('admin')">
+      <button class="nav-btn" id="nav-admin" style="display:none" onclick="onNavAdminClick()">
         <span class="nav-icon" style="position:relative">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           <span class="nav-badge" id="admin-badge" style="display:none">0</span>
@@ -2469,6 +2469,17 @@ function updateDockBellBadge() {
     } else {
       adminBadge.style.display = 'none';
     }
+  }
+}
+
+function onNavAdminClick() {
+  switchTab('admin');
+  if (!currentUser) return;
+  const count = getData('requests', []).filter(r =>
+    (r.status === 'pending' || r.status === 'cancel_requested') && canApprove(currentUser, r.uid)
+  ).length;
+  if (count > 0) {
+    setTimeout(() => switchAdminTab('approve', document.getElementById('admtab-approve')), 50);
   }
 }
 
@@ -4349,20 +4360,41 @@ function showToast(msg, type = '') {
 
 function showNotice() {
   if (!currentUser) return;
+  // 관리자/팀장: 대기건이 있으면 승인 화면으로 바로 이동, 없으면 토스트
   if (isAdmin(currentUser) || isLeader(currentUser)) {
     const count = getData('requests', []).filter(r =>
       (r.status === 'pending' || r.status === 'cancel_requested') && canApprove(currentUser, r.uid)
     ).length;
-    showToast(count > 0 ? `승인 대기 ${count}건이 있습니다` : '새 알림이 없습니다');
+    if (count > 0) {
+      if (isAdmin(currentUser)) {
+        switchTab('admin');
+        setTimeout(() => switchAdminTab('approve', document.getElementById('admtab-approve')), 50);
+      } else {
+        switchTab('approve');
+      }
+      return;
+    }
+    showToast('새 알림이 없습니다');
   } else {
+    // 일반 직원: 처리건이 있으면 신청탭으로 이동하며 읽음 처리
     const seenKey = `notif_seen_${currentUser.id}`;
     const seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
-    const count = getData('requests', []).filter(r =>
+    const pending = getData('requests', []).filter(r =>
       r.uid === currentUser.id &&
       (r.status === 'approved' || r.status === 'rejected' || r.status === 'cancelled') &&
       !seen.includes(r.id)
-    ).length;
-    showToast(count > 0 ? `처리된 신청 ${count}건을 확인하세요` : '새 알림이 없습니다');
+    );
+    if (pending.length > 0) {
+      const resolvedIds = getData('requests', [])
+        .filter(r => r.uid === currentUser.id &&
+          (r.status === 'approved' || r.status === 'rejected' || r.status === 'cancelled'))
+        .map(r => r.id);
+      localStorage.setItem(seenKey, JSON.stringify(resolvedIds));
+      updateDockBellBadge();
+      switchTab('vacation');
+      return;
+    }
+    showToast('새 알림이 없습니다');
   }
 }
 
