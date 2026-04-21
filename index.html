@@ -2147,7 +2147,16 @@ function refreshIfActive() {
   if (!currentUser) return;
   try {
     if (currentTab === 'home') renderHome();
-    else if (currentTab === 'admin') renderAdmin();
+    else if (currentTab === 'admin') {
+      // admin 탭: 현재 활성 서브탭만 갱신 (renderAdmin() 호출 시 승인대기 패널이 리셋되는 버그 방지)
+      const activeBtn = document.querySelector('#tab-admin .admin-tab.active');
+      const sub = activeBtn ? activeBtn.id.replace('admtab-', '') : 'att';
+      if (sub === 'att')         renderAdminAtt();
+      else if (sub === 'absent') renderAdminAbsent();
+      else if (sub === 'emp')    renderAdminEmp();
+      else if (sub === 'approve') renderAdminApprovePanel();
+      // accounts/qrmanage/reset/excel 은 실시간 갱신 불필요
+    }
     else if (currentTab === 'approve') renderApprove();
     else if (currentTab === 'history') renderHistory();
     else if (currentTab === 'vacation') renderVacation();
@@ -2696,14 +2705,26 @@ function renderVacation() {
 let adminViewMonth = new Date().getMonth() + 1;
 let adminViewYear  = new Date().getFullYear();
 
+// 현재 활성 admin 서브탭에 맞는 렌더 함수 라우터 (changeAdminMonth 등에서 사용)
+function renderAdminTab(tab) {
+  if (tab === 'att')         renderAdminAtt();
+  else if (tab === 'absent') renderAdminAbsent();
+  else if (tab === 'emp')    renderAdminEmp();
+  else if (tab === 'approve') renderAdminApprovePanel();
+  else if (tab === 'accounts') renderAdminAccounts();
+  else if (tab === 'qrmanage') renderAdminQrManage();
+  else if (tab === 'reset')    renderAdminReset();
+  else if (tab === 'excel')    renderAdminExcel();
+}
+
 function changeAdminMonth(delta) {
   adminViewMonth += delta;
   if (adminViewMonth > 12) { adminViewMonth = 1; adminViewYear++; }
   if (adminViewMonth < 1)  { adminViewMonth = 12; adminViewYear--; }
   // 현재 활성 탭 재렌더
-  const active = document.querySelector('.admin-tab.active');
+  const active = document.querySelector('#tab-admin .admin-tab.active');
   if (active) {
-    const tab = active.getAttribute('data-tab') || 'att';
+    const tab = active.id.replace('admtab-', '') || 'att';
     renderAdminTab(tab);
   }
 }
@@ -3543,7 +3564,24 @@ function renderAdminApprovePanel() {
 }
 
 function updateAdminApproveBadge() {
-  // 관리탭 승인대기 배지 비표시 처리됨
+  const btn = document.getElementById('admtab-approve');
+  if (!btn || !currentUser) return;
+  const pending = getData('requests', []).filter(r =>
+    (r.status === 'pending' || r.status === 'cancel_requested') && canApprove(currentUser, r.uid)
+  ).length;
+  let badge = btn.querySelector('.admtab-badge');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'admtab-badge';
+    badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;background:var(--orange);color:#fff;border-radius:8px;font-size:10px;font-weight:500;padding:0 3px;margin-left:4px;vertical-align:middle;';
+    btn.appendChild(badge);
+  }
+  if (pending > 0) {
+    badge.textContent = pending > 9 ? '9+' : pending;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 // ── 전체 직원 목록 헬퍼 ──
