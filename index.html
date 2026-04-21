@@ -2430,9 +2430,24 @@ function calcDuration(start, end) {
 function updateDockBellBadge() {
   const badge = document.getElementById('dock-bell-badge');
   if (!badge || !currentUser) return;
-  const pending = getData('requests', []).filter(r => (r.status === 'pending' || r.status === 'cancel_requested') && canApprove(currentUser, r.uid)).length;
-  if (pending > 0) {
-    badge.textContent = pending > 9 ? '9+' : pending;
+  let count = 0;
+  if (isAdmin(currentUser) || isLeader(currentUser)) {
+    // 관리자/팀장: 승인 대기 건수
+    count = getData('requests', []).filter(r =>
+      (r.status === 'pending' || r.status === 'cancel_requested') && canApprove(currentUser, r.uid)
+    ).length;
+  } else {
+    // 일반 직원: 자신의 요청 중 처리 완료(승인/반려/취소) 중 미확인 건수
+    const seenKey = `notif_seen_${currentUser.id}`;
+    const seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
+    count = getData('requests', []).filter(r =>
+      r.uid === currentUser.id &&
+      (r.status === 'approved' || r.status === 'rejected' || r.status === 'cancelled') &&
+      !seen.includes(r.id)
+    ).length;
+  }
+  if (count > 0) {
+    badge.textContent = count > 9 ? '9+' : count;
     badge.style.display = 'flex';
   } else {
     badge.style.display = 'none';
@@ -2447,6 +2462,14 @@ function onDockBellClick() {
   } else if (isLeader(currentUser)) {
     switchTab('approve');
   } else {
+    // 일반 직원: 처리완료 요청 ID를 모두 "확인함"으로 저장 후 신청탭 이동
+    const seenKey = `notif_seen_${currentUser.id}`;
+    const resolvedIds = getData('requests', [])
+      .filter(r => r.uid === currentUser.id &&
+        (r.status === 'approved' || r.status === 'rejected' || r.status === 'cancelled'))
+      .map(r => r.id);
+    localStorage.setItem(seenKey, JSON.stringify(resolvedIds));
+    updateDockBellBadge();
     switchTab('vacation');
   }
 }
@@ -4291,7 +4314,22 @@ function showToast(msg, type = '') {
 }
 
 function showNotice() {
-  showToast('새 알림이 없습니다');
+  if (!currentUser) return;
+  if (isAdmin(currentUser) || isLeader(currentUser)) {
+    const count = getData('requests', []).filter(r =>
+      (r.status === 'pending' || r.status === 'cancel_requested') && canApprove(currentUser, r.uid)
+    ).length;
+    showToast(count > 0 ? `승인 대기 ${count}건이 있습니다` : '새 알림이 없습니다');
+  } else {
+    const seenKey = `notif_seen_${currentUser.id}`;
+    const seen = JSON.parse(localStorage.getItem(seenKey) || '[]');
+    const count = getData('requests', []).filter(r =>
+      r.uid === currentUser.id &&
+      (r.status === 'approved' || r.status === 'rejected' || r.status === 'cancelled') &&
+      !seen.includes(r.id)
+    ).length;
+    showToast(count > 0 ? `처리된 신청 ${count}건을 확인하세요` : '새 알림이 없습니다');
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -4307,6 +4345,17 @@ function initMainApp() {
   const approveNav = document.getElementById('nav-approve');
   approveNav.style.display = (isLeader(currentUser) || isAdmin(currentUser)) ? 'flex' : 'none';
   startClock();
+  // 일반 직원: 최초 로그인 시 기존 처리완료 건을 "확인함"으로 초기화 (첫 사용 시 알림 홍수 방지)
+  if (!isAdmin(currentUser) && !isLeader(currentUser)) {
+    const seenKey = `notif_seen_${currentUser.id}`;
+    if (!localStorage.getItem(seenKey)) {
+      const resolvedIds = getData('requests', [])
+        .filter(r => r.uid === currentUser.id &&
+          (r.status === 'approved' || r.status === 'rejected' || r.status === 'cancelled'))
+        .map(r => r.id);
+      localStorage.setItem(seenKey, JSON.stringify(resolvedIds));
+    }
+  }
   updateDockBellBadge();
   // QR 코드 백그라운드 자동 생성 (한번만, 이후 캐시 사용)
   setTimeout(() => { autoGenerateQRIfNeeded(); }, 500);
