@@ -3695,7 +3695,7 @@ function approveCancel(id, doCancel) {
 
 function updateApproveBadge() {
   const badge = document.getElementById('approve-badge');
-  if (!badge) return;
+  if (!badge || !currentUser) return;
   const pending = getData('requests', []).filter(r => (r.status === 'pending' || r.status === 'cancel_requested') && canApprove(currentUser, r.uid)).length;
   if (pending > 0) {
     badge.textContent = pending > 9 ? '9+' : pending;
@@ -4406,6 +4406,8 @@ function initMainApp() {
     }
   }
   updateDockBellBadge();
+  updateApproveBadge();
+  updateAdminApproveBadge();
   // QR 코드 백그라운드 자동 생성 (한번만, 이후 캐시 사용)
   setTimeout(() => { autoGenerateQRIfNeeded(); }, 500);
   // 홈 탭: 시작 시 topbar/nav 즉시 숨김
