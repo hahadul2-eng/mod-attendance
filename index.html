@@ -2036,10 +2036,10 @@ function isAdmin(user) { return user.role === 'admin'; }
 function isLeader(user) { return user.role === 'leader_a' || user.role === 'leader_b'; }
 function hasManageAccess(user) { return isAdmin(user) || isLeader(user); }
 function canApprove(approver, requesteeId) {
-  // 자기 자신 승인 불가 (전체 역할 공통)
-  if (approver.id === requesteeId) return false;
-  // admin(CEO + 관리부): 모든 신청 승인 가능
+  // admin(CEO + 관리부): 모든 신청 승인 가능 (자신 포함)
   if (isAdmin(approver)) return true;
+  // 자기 자신 승인 불가 (비관리자 공통)
+  if (approver.id === requesteeId) return false;
   const requestee = USERS[requesteeId];
   if (!requestee) return false;
   // leader_a: 자기 팀(A) 직원 + leader_b 상호 승인
