@@ -2541,8 +2541,8 @@ function renderHome() {
 
   updateCheckInUI();
 
-  // Recent requests
-  const reqs = getData('requests', []).filter(r => r.uid === currentUser.id).slice(-4).reverse();
+  // Recent requests — pending(대기) 상태만 표시, 승인/반려된 건 제외
+  const reqs = getData('requests', []).filter(r => r.uid === currentUser.id && (!r.status || r.status === 'pending')).slice(-4).reverse();
   const recList = document.getElementById('recent-list');
   if (recList) {
     if (reqs.length === 0) {
